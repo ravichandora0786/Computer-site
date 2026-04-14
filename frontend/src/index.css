@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+/* Enforce 'class' strategy for Dark Mode in Tailwind v4 */
+@variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* Fireart Colors - Applied to Standard Layout */
+  --color-primary: #FF4D2D;         /* Fireart Radiant Orange */
+  --color-secondary: #111111;       /* Deep Charcoal Black */
+  --color-main: #111111;            /* Alias for primary charcoal text/bg */
+  --color-accent: #FF5C39;          /* Lighter Accent */
+
+  /* Centralized Theme Mapping */
+  --color-bg-page: var(--bg-page);
+  --color-bg-card: var(--bg-card);
+  --color-bg-sidebar: var(--bg-sidebar);
+
+  --color-text-main: var(--text-main);
+  --color-text-muted: var(--text-muted);
+  --color-text-sidebar: var(--text-sidebar);
+
+  --color-border-line: var(--border-line);
+}
+
+:root {
+  /* --- Light Mode (Fireart Colors) --- */
+  --bg-page: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-sidebar: #111111; /* Deep charcoal sidebar for premium contrast */
+
+  --text-main: #111111;
+  --text-muted: #707070;
+  --text-sidebar: #a0a0a0;
+
+  --border-line: #e5e7eb;
+
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  
+  /* Force Chrome to respect Light Mode as default */
+  color-scheme: light;
+}
+
+.dark {
+  /* --- Dark Mode (Sleek Charcoal) --- */
+  --bg-page: #0a0a0c;
+  --bg-card: #16161a;
+  --bg-sidebar: #050505;
+
+  --text-main: #ffffff;
+  --text-muted: #94a3b8;
+  --text-sidebar: #ffffff;
+
+  --border-line: #2d2d30;
+
+  /* Switch browser UI to dark only when .dark class is active */
+  color-scheme: dark;
+}
+
+/* Global Styles using standard layout (No floating/circular design) */
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background-color: var(--bg-page);
+  color: var(--text-main);
+  font-size: 14px; /* Standardizing base font size */
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+#root {
+  width: 100%;
+}
+
+/* Standard UI Layout Utilities */
+.bg-page { background-color: var(--bg-page); }
+.bg-card { background-color: var(--bg-card); }
+.bg-sidebar { background-color: var(--bg-sidebar); }
+
+.text-main { color: var(--text-main); }
+.text-muted { color: var(--text-muted); }
+.text-sidebar { color: var(--text-sidebar); }
+
+.premium-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-line);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  border-radius: 0.75rem; /* Standard rounded-xl */
+}
