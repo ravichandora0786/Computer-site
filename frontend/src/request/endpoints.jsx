@@ -5,8 +5,10 @@
 
 const endPoints = {
   // Auth
-  Login: "/auth/adminLogin",
-  Register: "/auth/adminRegister",
+  AdminLogin: "/auth/adminLogin",
+  AdminRegister: "/auth/adminRegister",
+  UserLogin: "/auth/login",
+  UserRegister: "/auth/register",
   SendOtp: "/auth/send-otp",
   VerifyOtp: "/auth/verify-otp",
   ForgotPassword: "/auth/forgot-password",

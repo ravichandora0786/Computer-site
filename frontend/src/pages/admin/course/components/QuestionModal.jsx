@@ -45,17 +45,17 @@ const QuestionModal = ({ isOpen, onClose, onSuccess, editingItem, testId }) => {
 
   const handleSubmit = (values, { setSubmitting }) => {
     const action = editingItem?.id ? updateQuestionAction : createQuestionAction;
-    const payload = editingItem?.id 
-      ? { id: editingItem.id, ...values } 
+    const payload = editingItem?.id
+      ? { id: editingItem.id, ...values }
       : { test_id: testId, ...values };
 
-    dispatch(action({ 
-      ...payload, 
+    dispatch(action({
+      ...payload,
       onSuccess: () => {
         onSuccess();
         onClose();
         setSubmitting(false);
-      } 
+      }
     }));
   };
 
@@ -154,21 +154,22 @@ const QuestionModal = ({ isOpen, onClose, onSuccess, editingItem, testId }) => {
               </div>
 
               <div className="flex justify-end gap-3 pt-6 border-t border-gray-100 sticky bottom-0 bg-white">
-                <LoadingButton 
-                  type="button" 
+                <LoadingButton
+                  type="button"
                   variant="secondary"
-                  onClick={onClose} 
+                  onClick={onClose}
                   className="!w-auto px-6"
                   disabled={isSubmitting}
                 >
                   Cancel
                 </LoadingButton>
-                <LoadingButton 
-                  name={editingItem ? "Synchronize Question" : "Append to Pool"} 
-                  type="submit" 
+                <LoadingButton
+                  type="submit"
                   isLoading={isSubmitting}
                   className="!w-auto px-6"
-                />
+                >
+                  {editingItem ? "Update" : "Create"}
+                </LoadingButton>
               </div>
             </Form>
           )}

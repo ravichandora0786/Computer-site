@@ -26,7 +26,25 @@ const getUserCourses = asyncHandler(async (req, res, next) => {
 const enrollCourse = asyncHandler(async (req, res, next) => {
   const transaction = await sequelize.transaction()
   try {
-    const userCourse = await UserCourseModel.create(req.body, { transaction })
+    const { courseId, userId, progress, startDate, endDate, status } = req.body;
+    
+    // Safety check
+    if (!courseId || !userId) {
+      throw new ApiError(400, 'Course ID and User ID are required for enrollment');
+    }
+
+    // Check for duplicate enrollment
+    const existingEnrollment = await UserCourseModel.findOne({
+      where: { courseId, userId }
+    });
+
+    if (existingEnrollment) {
+      throw new ApiError(400, 'You are already enrolled in this course');
+    }
+
+    const payload = { courseId, userId, progress: progress || 0, startDate, endDate, status };
+    const userCourse = await UserCourseModel.create(payload, { transaction })
+    
     await transaction.commit()
     return res
       .status(201)

@@ -30,9 +30,15 @@ const LessonPageModel = sequelize.define(
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
+    required_time: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      allowNull: false,
+      comment: 'Mandatory stay duration in minutes'
+    },
     status: {
       type: DataTypes.ENUM('draft', 'published'),
-      defaultValue: 'draft',
+      defaultValue: 'published',
     },
   },
   {

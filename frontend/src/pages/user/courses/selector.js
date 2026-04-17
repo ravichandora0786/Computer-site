@@ -21,3 +21,18 @@ export const selectCoursesPagination = createSelector(
   [selectCoursesState],
   (state) => state.pagination
 );
+
+export const selectCourseDetail = createSelector(
+  [selectCoursesState],
+  (state) => state.courseDetail
+);
+
+export const selectDetailLoading = createSelector(
+  [selectCoursesState],
+  (state) => state.detailLoading
+);
+
+export const selectDetailError = createSelector(
+  [selectCoursesState],
+  (state) => state.detailError
+);

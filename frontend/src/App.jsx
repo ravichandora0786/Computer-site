@@ -43,6 +43,7 @@ import FAQPage from './pages/user/faq'
 import PublicTermsPage from './pages/user/terms'
 import PolicyPage from './pages/user/policy'
 import CoursesPage from './pages/user/courses'
+import CourseDetail from './pages/user/courses/CourseDetail'
 
 function App() {
   const isFullScreenLoading = useSelector(selectScreenLoader)
@@ -104,6 +105,7 @@ function App() {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/courses" element={<CoursesPage />} />
+              <Route path="/course-detail/:id" element={<CourseDetail />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/faq" element={<FAQPage />} />

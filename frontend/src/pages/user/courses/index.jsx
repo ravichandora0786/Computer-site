@@ -115,7 +115,7 @@ const CoursesPage = () => {
               </div>
             ) : items.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                   {items.map((course, i) => (
                     <CourseCard key={course.id || i} course={course} />
                   ))}

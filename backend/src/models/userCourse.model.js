@@ -11,14 +11,6 @@ const UserCourseModel = sequelize.define(
       primaryKey: true,
       allowNull: false,
     },
-    title: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    type: {
-      type: DataTypes.ENUM(...COURSE_TYPE_ENUM),
-      allowNull: false,
-    },
     courseId: {
       type: DataTypes.UUID,
       allowNull: false,
@@ -29,15 +21,13 @@ const UserCourseModel = sequelize.define(
       allowNull: false,
       field: 'user_id',
     },
-    amount: {
-      type: DataTypes.DECIMAL(10, 2),
-    },
-    amountType: {
-      type: DataTypes.STRING,
-      field: 'amount_type',
-    },
-    description: {
-      type: DataTypes.TEXT,
+    progress: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      validate: {
+        min: 0,
+        max: 100
+      }
     },
     startDate: {
       type: DataTypes.DATE,

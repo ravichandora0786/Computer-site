@@ -26,20 +26,25 @@ export default function AdminLogin() {
 
     setIsLoading(true);
     try {
-      // Assuming Login endpoint accepts email/password and returns tokens & user data
-      const response = await httpRequest.post(endPoints.Login, formData);
+      const response = await httpRequest.post(endPoints.AdminLogin, formData);
       
-      const { accessToken, user } = response.data; // adjust based on actual API response structure
-      
-      if (accessToken) {
-        dispatch(setAccessToken(accessToken));
-      }
-      if (user) {
-        dispatch(setUser(user));
-      }
+      // Check if the backend response explicitly marks this as a success
+      if (response && response.success) {
+        const { accessToken, user } = response.data || {};
+        
+        if (accessToken) {
+          dispatch(setAccessToken(accessToken));
+        }
+        if (user) {
+          dispatch(setUser(user));
+        }
 
-      toast.success('Login successful!');
-      navigate('/admin');
+        toast.success(response.message || 'Login successful!');
+        navigate('/admin');
+      } else {
+        // Handle cases where API returns 200 OK but success: false (logical errors)
+        toast.error(response?.message || 'Unauthorized access');
+      }
     } catch (error) {
       console.error('Login error:', error);
       toast.error(error.message || 'Invalid credentials');

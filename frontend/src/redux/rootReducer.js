@@ -25,7 +25,10 @@ import adminPrivacyPolicyReducer from '../pages/admin/privacyPolicy/slice';
 import adminCourseRatingReducer from '../pages/admin/courseRating/slice';
 import adminPlatformRatingReducer from '../pages/admin/platformRating/slice';
 
+import userAuthReducer from '../pages/user/auth/slice';
+
 const rootReducer = combineReducers({
+  userAuth: userAuthReducer,
   common: commonReducer,
   courseData: courseReducer,
   courseContent: courseContentReducer,

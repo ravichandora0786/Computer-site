@@ -1,5 +1,5 @@
 import { put, call, takeLatest, select } from "redux-saga/effects";
-import { fetchCourses, fetchCoursesSuccess, fetchCoursesFailure } from "./slice";
+import { fetchCourses, fetchCoursesSuccess, fetchCoursesFailure, fetchCourseDetail, fetchCourseDetailSuccess, fetchCourseDetailFailure } from "./slice";
 import { httpRequest, endPoints } from "@/request";
 
 const selectFilters = (state) => state.courses.filters;
@@ -27,6 +27,16 @@ function* handleFetchCourses(action) {
   }
 }
 
+function* handleFetchCourseDetail(action) {
+  try {
+    const response = yield call(httpRequest.get, `${endPoints.CourseById}/${action.payload}`);
+    yield put(fetchCourseDetailSuccess(response.data));
+  } catch (error) {
+    yield put(fetchCourseDetailFailure(error.message));
+  }
+}
+
 export function* coursesSaga() {
   yield takeLatest([fetchCourses.type, "courses/setFilters"], handleFetchCourses);
+  yield takeLatest(fetchCourseDetail.type, handleFetchCourseDetail);
 }

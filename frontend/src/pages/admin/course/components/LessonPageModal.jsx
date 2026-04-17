@@ -35,17 +35,17 @@ const LessonPageModal = ({ isOpen, onClose, onSuccess, editingItem, lessonId }) 
   const handleSubmit = (values, { setSubmitting }) => {
     sessionStorage.setItem('studio_save_success', 'true');
     const action = editingItem?.id ? updatePageAction : createPageAction;
-    const payload = editingItem?.id 
-      ? { id: editingItem.id, ...values } 
+    const payload = editingItem?.id
+      ? { id: editingItem.id, ...values }
       : { lesson_id: lessonId, ...values };
 
-    dispatch(action({ 
-      ...payload, 
+    dispatch(action({
+      ...payload,
       onSuccess: () => {
         onSuccess();
         onClose();
         setSubmitting(false);
-      } 
+      }
     }));
   };
 
@@ -72,21 +72,22 @@ const LessonPageModal = ({ isOpen, onClose, onSuccess, editingItem, lessonId }) 
                 touched={touched}
               />
               <div className="flex justify-end gap-3 pt-6 border-t border-gray-100 mt-4">
-                <LoadingButton 
-                  type="button" 
+                <LoadingButton
+                  type="button"
                   variant="secondary"
-                  onClick={onClose} 
+                  onClick={onClose}
                   className="!w-auto px-6"
                   disabled={isSubmitting}
                 >
                   Cancel
                 </LoadingButton>
-                <LoadingButton 
-                  name={editingItem?.id ? "Update Page" : "Add Page"} 
-                  type="submit" 
+                <LoadingButton
+                  type="submit"
                   isLoading={isSubmitting}
                   className="!w-auto px-6"
-                />
+                >
+                  {editingItem?.id ? "Update" : "Create"}
+                </LoadingButton>
               </div>
             </Form>
           )}

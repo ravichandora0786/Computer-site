@@ -13,7 +13,7 @@ import { endPoints, httpRequest } from "../../../request";
 function* getAllCoursesSaga(action) {
   const { page = 1, limit = 10, onSuccess, onFailure } = action.payload || {};
   try {
-    const response = yield call(httpRequest.get, `${endPoints.CourseList}?page=${page}&limit=${limit}`);
+    const response = yield call(httpRequest.get, `${endPoints.CourseList}?page=${page}&limit=${limit}&include_drafts=true`);
     yield put(setCourseList(response?.data || []));
     if (onSuccess) yield call(onSuccess, response?.data);
   } catch (err) {

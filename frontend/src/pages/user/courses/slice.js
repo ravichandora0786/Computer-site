@@ -5,6 +5,9 @@ const initialState = {
   pagination: null,
   loading: false,
   error: null,
+  courseDetail: null,
+  detailLoading: false,
+  detailError: null,
   filters: {
     category_id: "",
     access_type: "",
@@ -35,6 +38,18 @@ const coursesSlice = createSlice({
     resetFilters: (state) => {
       state.filters = initialState.filters;
     },
+    fetchCourseDetail: (state) => {
+      state.detailLoading = true;
+      state.detailError = null;
+    },
+    fetchCourseDetailSuccess: (state, action) => {
+      state.detailLoading = false;
+      state.courseDetail = action.payload;
+    },
+    fetchCourseDetailFailure: (state, action) => {
+      state.detailLoading = false;
+      state.detailError = action.payload;
+    },
   },
 });
 
@@ -43,7 +58,10 @@ export const {
   fetchCoursesSuccess, 
   fetchCoursesFailure, 
   setFilters, 
-  resetFilters 
+  resetFilters,
+  fetchCourseDetail,
+  fetchCourseDetailSuccess,
+  fetchCourseDetailFailure
 } = coursesSlice.actions;
 
 export default coursesSlice.reducer;

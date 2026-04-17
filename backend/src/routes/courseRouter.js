@@ -1,11 +1,11 @@
 import express from 'express';
-import { authenticateUser } from '../middlewares/authMiddleware.js'
+import { authenticateUser, extractUser } from '../middlewares/authMiddleware.js'
 import courseController from '../controllers/course.controller.js'
 
 const courseRouter = express.Router()
 
-courseRouter.get('/', courseController.getCourses)
-courseRouter.get('/getById/:id', courseController.getCourseById)
+courseRouter.get('/', extractUser, courseController.getCourses)
+courseRouter.get('/getById/:id', extractUser, courseController.getCourseById)
 
 // Protected routes
 courseRouter.post('/create', authenticateUser, courseController.createCourse)

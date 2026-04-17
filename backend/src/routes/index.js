@@ -23,6 +23,7 @@ import aboutSectionRouter from './aboutSectionRouter.js'
 import privacyPolicyRouter from './privacyPolicyRouter.js'
 import courseRatingRouter from './courseRatingRouter.js'
 import platformRatingRouter from './platformRatingRouter.js'
+import lessonProgressRouter from './lessonProgressRouter.js'
 
 const router = express.Router()
 
@@ -44,7 +45,7 @@ router.use('/otp', otpRouter)
 router.use('/orders', orderRouter)
 router.use('/requests', requestRouter)
 router.use('/terms', termsRouter)
-router.use('/user-courses', userCourseRouter)
+router.use('/userCourse', userCourseRouter)
 router.use('/modules', courseModuleRouter)
 router.use('/lessons', lessonRouter)
 router.use('/module-tests', moduleTestRouter)
@@ -56,5 +57,6 @@ router.use('/about-sections', aboutSectionRouter)
 router.use('/privacy-policies', privacyPolicyRouter)
 router.use('/course-ratings', courseRatingRouter)
 router.use('/platform-ratings', platformRatingRouter)
+router.use('/lesson-progress', lessonProgressRouter)
 
 export default router

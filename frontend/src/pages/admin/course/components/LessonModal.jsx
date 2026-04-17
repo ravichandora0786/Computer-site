@@ -32,17 +32,17 @@ const LessonModal = ({ isOpen, onClose, onSuccess, editingItem, moduleId }) => {
 
   const handleSubmit = (values, { setSubmitting }) => {
     const action = editingItem?.id ? updateLessonAction : createLessonAction;
-    const payload = editingItem?.id 
-      ? { id: editingItem.id, ...values } 
+    const payload = editingItem?.id
+      ? { id: editingItem.id, ...values }
       : { module_id: moduleId, ...values };
 
-    dispatch(action({ 
-      ...payload, 
+    dispatch(action({
+      ...payload,
       onSuccess: () => {
         onSuccess();
         onClose();
         setSubmitting(false);
-      } 
+      }
     }));
   };
 
@@ -68,21 +68,22 @@ const LessonModal = ({ isOpen, onClose, onSuccess, editingItem, moduleId }) => {
                 touched={touched}
               />
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                <LoadingButton 
-                  type="button" 
+                <LoadingButton
+                  type="button"
                   variant="secondary"
-                  onClick={onClose} 
+                  onClick={onClose}
                   className="!w-auto px-6"
                   disabled={isSubmitting}
                 >
                   Cancel
                 </LoadingButton>
-                <LoadingButton 
-                  name={editingItem ? "Update Lesson" : "Create Lesson"} 
-                  type="submit" 
+                <LoadingButton
+                  type="submit"
                   isLoading={isSubmitting}
                   className="!w-auto px-6"
-                />
+                >
+                  {editingItem ? "Update" : "Create"}
+                </LoadingButton>
               </div>
             </Form>
           )}

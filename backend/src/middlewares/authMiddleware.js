@@ -28,11 +28,34 @@ export const authenticateUser = async (req, res, next) => {
       return next(new ApiError(401, "Token blocked. Please login again."));
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "super_secret");
     req.user = decoded;
     next();
   } catch (err) {
     return next(new ApiError(401, err.message || "Invalid or expired token"));
+  }
+};
+
+/**
+ * Middleware to optionally extract user from token without forcing authentication.
+ */
+export const extractUser = async (req, res, next) => {
+  try {
+    const token = req.header("Authorization")?.split(" ")[1];
+    if (token) {
+      // Check if blocked
+      const blockedToken = await BlockedTokenModel.findOne({
+        where: { token },
+      });
+      if (!blockedToken) {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || "super_secret");
+        req.user = decoded;
+      }
+    }
+    next();
+  } catch (err) {
+    // We ignore errors here because authentication is optional
+    next();
   }
 };
 

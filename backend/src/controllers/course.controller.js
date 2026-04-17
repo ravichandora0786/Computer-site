@@ -7,18 +7,21 @@ import fs from 'fs'
 import { ApiResponse } from '../utils/ApiResponse.js'
 import { ApiError } from '../utils/ApiError.js'
 import { responseMessage } from '../utils/responseMessage.js'
-import { CourseModel, CourseCategoryModel, UserModel, CourseMediaModel } from '../models/associations.js'
+import { CourseModel, CourseCategoryModel, UserModel, CourseMediaModel, CourseModuleModel, LessonModel, LessonPageModel, UserCourseModel, LessonProgressModel, ModuleTestModel, UserPageProgressModel } from '../models/associations.js'
 
 /** Get all courses with pagination */
 const getCourses = asyncHandler(async (req, res, next) => {
-  const { category_id, access_type, course_mode, search } = req.query;
+  const { category_id, access_type, course_mode, search, include_drafts } = req.query;
   const page = parseInt(req.query.page) || 1
   const limit = parseInt(req.query.limit) || 10
   const offset = (page - 1) * limit
  
-  const where = {
-    status: { [Op.ne]: 'draft' }
-  };
+  const where = {};
+  
+  // By default, exclude drafts unless explicitly requested
+  if (include_drafts !== 'true') {
+    where.status = { [Op.ne]: 'draft' };
+  }
 
   if (category_id) where.course_category_id = category_id;
   if (access_type) where.access_type = access_type;
@@ -68,13 +71,30 @@ const getCourses = asyncHandler(async (req, res, next) => {
     order: [[{ model: CourseMediaModel, as: 'media' }, 'order_index', 'ASC']]
   })
 
-  const totalPages = Math.ceil(count / limit)
+  // Optimize: Fetch all user enrollments at once
+  let enrolledIds = [];
+  if (req.user) {
+    const enrollments = await UserCourseModel.findAll({
+      where: { userId: req.user.id },
+      raw: true
+    });
+    // Check both courseId and course_id in case of mapping issues
+    enrolledIds = enrollments.map(e => e.courseId || e.course_id);
+  }
+
+  const totalPages = Math.ceil(count / limit);
+
+  const coursesWithEnrollment = courses.map(course => {
+    const courseJson = course.toJSON();
+    courseJson.isEnrolled = enrolledIds.includes(course.id);
+    return courseJson;
+  });
 
   return res.status(200).json(
     new ApiResponse(
       200,
       {
-        items: courses,
+        items: coursesWithEnrollment,
         pagination: {
           totalItems: count,
           totalPages,
@@ -95,15 +115,70 @@ const getCourseById = asyncHandler(async (req, res, next) => {
       { model: CourseCategoryModel, as: 'category' },
       { model: UserModel, as: 'author_details', attributes: ['id', 'user_name', 'email'] },
       { model: CourseMediaModel, as: 'media' },
+      { 
+        model: CourseModuleModel, 
+        as: 'modules',
+        include: [
+          { model: ModuleTestModel, as: 'test' },
+          { 
+            model: LessonModel, 
+            as: 'lessons',
+            include: [
+              { 
+                model: LessonPageModel, 
+                as: 'pages',
+                include: [
+                  {
+                    model: UserPageProgressModel,
+                    as: 'user_progress',
+                    where: req.user ? { user_id: req.user.id } : { user_id: null },
+                    required: false
+                  }
+                ]
+              },
+              { 
+                model: LessonProgressModel, 
+                as: 'userProgress',
+                where: req.user ? { student_id: req.user.id } : { student_id: null },
+                required: false
+              }
+            ]
+          }
+        ]
+      },
     ],
-    order: [[{ model: CourseMediaModel, as: 'media' }, 'order_index', 'ASC']]
+    order: [
+      [{ model: CourseMediaModel, as: 'media' }, 'order_index', 'ASC'],
+      [{ model: CourseModuleModel, as: 'modules' }, 'module_order', 'ASC'],
+      [{ model: CourseModuleModel, as: 'modules' }, { model: LessonModel, as: 'lessons' }, 'lesson_order', 'ASC'],
+      [{ model: CourseModuleModel, as: 'modules' }, { model: LessonModel, as: 'lessons' }, { model: LessonPageModel, as: 'pages' }, 'page_order', 'ASC'],
+    ]
   })
   if (!course) {
     return next(new ApiError(404, responseMessage.notFound('Course')))
   }
+
+  const courseJson = course.toJSON();
+  courseJson.isEnrolled = false;
+
+  // Add enrollment status if user is logged in
+  if (req.user && req.user.id) {
+    const enrollment = await UserCourseModel.findOne({
+      where: {
+        userId: req.user.id,
+        courseId: course.id,
+        status: 'active'
+      }
+    });
+    
+    if (enrollment) {
+      courseJson.isEnrolled = true;
+    }
+  }
+
   return res
     .status(200)
-    .json(new ApiResponse(200, course, responseMessage.fetched('Course')))
+    .json(new ApiResponse(200, courseJson, responseMessage.fetched('Course')))
 })
 
 /** Create course */
@@ -235,7 +310,6 @@ const deleteCourse = asyncHandler(async (req, res, next) => {
       return next(new ApiError(400, "Course ID is required"))
     }
 
-    // 1. Fetch course with media to identify files for deletion
     const course = await CourseModel.findByPk(id, {
       include: [{ model: CourseMediaModel, as: 'media' }],
       transaction
@@ -246,13 +320,11 @@ const deleteCourse = asyncHandler(async (req, res, next) => {
       return next(new ApiError(404, responseMessage.notFound('Course')))
     }
 
-    // 2. Cleanup physical files from storage
+    // Cleanup physical files
     if (course.media && Array.isArray(course.media)) {
       course.media.forEach(item => {
-        if (item.url && !item.url.startsWith('http')) { // Only delete local files, not YouTube
+        if (item.url && !item.url.startsWith('http')) {
           try {
-            // Convert /media/course/filename to physical path
-            // item.url starts with /media
             const relativePath = item.url.replace(/^\/media/, 'public/media');
             const absolutePath = path.join(process.cwd(), relativePath);
             if (fs.existsSync(absolutePath)) {
@@ -265,7 +337,6 @@ const deleteCourse = asyncHandler(async (req, res, next) => {
       });
     }
 
-    // 3. Destroy the course record (Cascade will handle DB media cleanup)
     await course.destroy({ transaction })
     await transaction.commit()
 
@@ -291,7 +362,6 @@ const syncCourseMedia = asyncHandler(async (req, res, next) => {
     }
 
     if (media && Array.isArray(media)) {
-      // 1. Delete media that aren't in the incoming array
       const incomingMediaIds = media.filter(m => m.id).map(m => m.id)
       await CourseMediaModel.destroy({
         where: {
@@ -301,7 +371,6 @@ const syncCourseMedia = asyncHandler(async (req, res, next) => {
         transaction
       })
 
-      // 2. Add or Update remaining media
       const mediaOperations = media.map((item, index) => {
         const mediaItem = {
           ...item,

@@ -20,6 +20,7 @@ import LessonProgressModel from './lessonProgress.model.js'
 import TestAttemptModel from './testAttempt.model.js'
 import TestAttemptAnswerModel from './testAttemptAnswer.model.js'
 import OfflineBatchModel from './offlineBatch.model.js'
+import UserPageProgressModel from './userPageProgress.model.js'
 
 // New Models
 import PlatformRatingModel from './platformRating.model.js'
@@ -139,6 +140,10 @@ PlatformRatingModel.belongsTo(UserModel, { foreignKey: 'user_id', as: 'user' })
 CourseModel.hasMany(CourseRatingModel, { foreignKey: 'course_id', as: 'ratings', onDelete: 'CASCADE' })
 CourseRatingModel.belongsTo(CourseModel, { foreignKey: 'course_id', as: 'course' })
 
+// Lesson - LessonProgress
+LessonModel.hasMany(LessonProgressModel, { foreignKey: 'lesson_id', as: 'userProgress', onDelete: 'CASCADE' })
+LessonProgressModel.belongsTo(LessonModel, { foreignKey: 'lesson_id', as: 'lesson' })
+
 // User - CourseRating
 UserModel.hasMany(CourseRatingModel, { foreignKey: 'user_id', as: 'course_ratings' })
 CourseRatingModel.belongsTo(UserModel, { foreignKey: 'user_id', as: 'user' })
@@ -146,6 +151,18 @@ CourseRatingModel.belongsTo(UserModel, { foreignKey: 'user_id', as: 'user' })
 // PrivacyPolicy - User (Updated by)
 UserModel.hasMany(PrivacyPolicyModel, { foreignKey: 'updated_by', as: 'updated_policies' })
 PrivacyPolicyModel.belongsTo(UserModel, { foreignKey: 'updated_by', as: 'admin' })
+
+// User - UserPageProgress
+UserModel.hasMany(UserPageProgressModel, { foreignKey: 'user_id', as: 'page_progress', onDelete: 'CASCADE' })
+UserPageProgressModel.belongsTo(UserModel, { foreignKey: 'user_id', as: 'user' })
+
+// LessonPage - UserPageProgress
+LessonPageModel.hasMany(UserPageProgressModel, { foreignKey: 'page_id', as: 'user_progress', onDelete: 'CASCADE' })
+UserPageProgressModel.belongsTo(LessonPageModel, { foreignKey: 'page_id', as: 'page' })
+
+// Lesson - UserPageProgress
+LessonModel.hasMany(UserPageProgressModel, { foreignKey: 'lesson_id', as: 'userPageProgress', onDelete: 'CASCADE' })
+UserPageProgressModel.belongsTo(LessonModel, { foreignKey: 'lesson_id', as: 'lesson' })
 
 export {
   UserModel,
@@ -180,4 +197,5 @@ export {
   FAQModel,
   PrivacyPolicyModel,
   AboutSectionModel,
+  UserPageProgressModel,
 }

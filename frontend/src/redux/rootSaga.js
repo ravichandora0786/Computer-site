@@ -25,7 +25,10 @@ import { privacyPolicySagas } from '../pages/admin/privacyPolicy/saga';
 import { courseRatingSagas } from '../pages/admin/courseRating/saga';
 import { platformRatingSagas } from '../pages/admin/platformRating/saga';
 
+import { userAuthSaga } from '../pages/user/auth/saga';
+
 function* rootSaga() {
+  yield spawn(userAuthSaga);
   yield spawn(commonSagas);
   yield spawn(courseSagas);
   yield spawn(courseContentSagas);

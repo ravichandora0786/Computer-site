@@ -45,7 +45,7 @@ const Home = () => {
           <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/20 blur-[120px] rounded-full opacity-50 animate-pulse" />
         </div>
 
-        <div className="container mx-auto px-4 md:px-6 relative z-10">
+        <div className="container max-w-full mx-auto px-4 md:px-6 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <motion.div 
               initial={{ opacity: 0, x: -50 }}
@@ -106,7 +106,7 @@ const Home = () => {
 
       {/* 2. Excellence Showcase Section */}
       <section className="py-32 bg-gray-50 relative overflow-hidden">
-        <div className="container mx-auto px-4 md:px-6">
+        <div className="container max-w-full mx-auto px-4 md:px-6">
           <div className="text-center mb-20">
             <h2 className="text-[10px] font-black text-primary uppercase tracking-[0.5em] mb-4 italic">Platform Excellence</h2>
             <h3 className="text-4xl md:text-6xl font-black text-main tracking-tighter uppercase italic">Why Studio Learning Works</h3>
@@ -137,7 +137,7 @@ const Home = () => {
 
       {/* 3. Featured Analytics */}
       <section className="py-20 border-y border-gray-50">
-        <div className="container mx-auto px-4 md:px-6">
+        <div className="container max-w-full mx-auto px-4 md:px-6">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-12">
             {stats.map((stat, i) => (
               <div key={i} className="text-center group">
@@ -153,7 +153,7 @@ const Home = () => {
 
       {/* 4. Dynamic Course Catalog */}
       <section className="py-32 bg-white relative">
-        <div className="container mx-auto px-4 md:px-6">
+        <div className="container max-w-full mx-auto px-4 md:px-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-20 text-main uppercase italic">
             <div>
               <h2 className="text-[10px] font-black text-primary uppercase tracking-[0.5em] mb-4">Mastery Library</h2>
@@ -164,7 +164,7 @@ const Home = () => {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-5">
             {courses.length > 0 ? (
               courses.slice(0, 6).map((course, i) => (
                 <CourseCard key={course.id || i} course={course} />
@@ -180,13 +180,13 @@ const Home = () => {
 
       {/* 5. Expert Mentors */}
       <section className="py-24 bg-gray-50 relative overflow-hidden">
-        <div className="container mx-auto px-4 text-center mb-20">
+        <div className="container max-w-full mx-auto px-4 text-center mb-20">
           <h2 className="text-[10px] font-black text-primary uppercase tracking-[0.5em] mb-4 italic">Learn from the Best</h2>
           <h3 className="text-5xl md:text-6xl font-black text-main tracking-tighter leading-none mb-6 italic uppercase">Expert Mentors</h3>
           <p className="text-gray-500 font-medium max-w-2xl mx-auto italic font-bold text-sm">Our instructors are industry leaders with decades of collective experience in digital craftsmanship and strategy.</p>
         </div>
 
-        <div className="container mx-auto px-4">
+        <div className="container max-w-full mx-auto px-4">
           <div className="flex flex-wrap justify-center gap-12">
             {mentors.length > 0 ? (
               mentors.slice(0, 4).map((mentor) => (
@@ -215,7 +215,7 @@ const Home = () => {
 
       {/* 6. Global Student Reviews */}
       <section className="py-24 bg-white relative overflow-hidden">
-        <div className="container mx-auto px-4">
+        <div className="container max-w-full mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
             <div>
               <h2 className="text-[10px] font-black text-primary uppercase tracking-[0.5em] mb-4 italic">Student Voices</h2>

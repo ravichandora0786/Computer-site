@@ -6,8 +6,8 @@ const userCourseRouter = express.Router()
 
 userCourseRouter.use(authenticateUser)
 
-userCourseRouter.get('/', userCourseController.getUserCourses)
-userCourseRouter.post('/enroll', userCourseController.enrollCourse)
-userCourseRouter.put('/:id/status', userCourseController.updateEnrollmentStatus)
+userCourseRouter.get('/list', userCourseController.getUserCourses)
+userCourseRouter.post('/create', userCourseController.enrollCourse)
+userCourseRouter.put('/update', userCourseController.updateEnrollmentStatus)
 
 export default userCourseRouter

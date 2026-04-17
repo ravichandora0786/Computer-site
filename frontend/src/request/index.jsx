@@ -37,7 +37,14 @@ const hideLoader = () => {
 
 httpRequest.interceptors.request.use((config) => {
   showLoader();
-  const token = store.getState().common.accessToken;
+  const state = store.getState();
+  const isAdminPath = typeof window !== "undefined" && window.location.pathname.startsWith("/admin");
+  
+  // Prioritize tokens based on context (Admin vs User)
+  const token = isAdminPath 
+    ? (state.common.accessToken || state.userAuth.token)
+    : (state.userAuth.token || state.common.accessToken);
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -58,7 +65,10 @@ httpRequest.interceptors.response.use(
   async (err) => {
     hideLoader();
     const originalRequest = err.config;
-    if (err?.response?.status === 401 && !originalRequest._retry) {
+    const isAuthRequest = originalRequest.url.includes("/auth/");
+
+    // If it's a 401 and NOT an auth request (like login), try to refresh token
+    if (err?.response?.status === 401 && !isAuthRequest && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
@@ -85,7 +95,7 @@ httpRequest.interceptors.response.use(
 
         // redirect to admin login ONLY if the user is already in the /admin context
         if (typeof window !== "undefined" && window.location.pathname.startsWith("/admin")) {
-          window.location.href = "/admin/login";
+          // window.location.href = "/admin/login";
         }
 
         return Promise.reject(refreshError);

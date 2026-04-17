@@ -1,6 +1,7 @@
 import React from "react";
 import Header from "./Header";
 import Footer from "./Footer";
+import AuthModals from "./AuthModals";
 import { motion, AnimatePresence } from "framer-motion";
 
 const UserLayout = ({ children }) => {
@@ -16,6 +17,7 @@ const UserLayout = ({ children }) => {
         {children}
       </motion.main>
       <Footer />
+      <AuthModals />
     </div>
   );
 };
