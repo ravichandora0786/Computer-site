@@ -393,22 +393,35 @@ const CourseDetail = () => {
                     <div className="space-y-4">
                       {course.modules?.map((module, mIdx) => (
                         <div key={module.id} className="border border-gray-100 rounded-2xl overflow-hidden bg-white hover:border-primary/30 transition-all shadow-sm">
-                          <button 
+                          <div 
                             onClick={() => toggleModule(module.id)}
                             className={clsx(
-                              "w-full flex items-center justify-between p-4 px-6 text-left transition-all",
+                              "w-full flex items-center justify-between p-4 px-6 text-left transition-all cursor-pointer group",
                               expandedModules[module.id] ? "bg-gray-50/50" : "bg-white"
                             )}
                           >
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-4 flex-1">
                                <span className="text-[10px] font-black text-primary italic w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">0{mIdx + 1}</span>
                                <h4 className="text-base font-black text-main uppercase italic tracking-tight">{module.title}</h4>
+                               
+                               {/* Hover Button - Simplified for guaranteed visibility */}
+                               {!isEnrolled && (
+                                 <button
+                                   className="opacity-0 group-hover:opacity-100 translate-x-[-10px] group-hover:translate-x-0 transition-all duration-300 flex items-center gap-2 px-4 py-1.5 bg-emerald-600 text-white text-[9px] font-black uppercase tracking-widest rounded-lg shadow-lg shadow-emerald-200 ml-4 italic whitespace-nowrap"
+                                   onClick={(e) => {
+                                     e.stopPropagation();
+                                     handleEnroll();
+                                   }}
+                                 >
+                                    Start Learning <MdPlayCircle size={14} />
+                                 </button>
+                               )}
                             </div>
                             <MdKeyboardArrowDown 
                                 size={20} 
                                 className={clsx("text-gray-300 transition-all", expandedModules[module.id] && "rotate-180 text-primary")} 
                             />
-                          </button>
+                          </div>
                           
                           <AnimatePresence>
                             {expandedModules[module.id] && (
@@ -515,9 +528,27 @@ const CourseDetail = () => {
                                                   </div>
                                                 </div>
                                               ) : (
-                                                <div className="p-16 flex flex-col items-center justify-center text-center bg-gray-50/10">
-                                                    <MdLock size={32} className="text-gray-200 mb-4" />
-                                                    <p className="text-[7px] font-black uppercase tracking-[0.3em] text-gray-400 italic">Segment Locked</p>
+                                                <div className="p-16 flex flex-col items-center justify-center text-center bg-gray-50/10 rounded-2xl border-2 border-dashed border-gray-100 mx-4 my-2">
+                                                    <div className="w-16 h-16 bg-white rounded-full shadow-sm flex items-center justify-center text-gray-200 mb-6 border border-gray-50">
+                                                       <MdLock size={32} />
+                                                    </div>
+                                                    <h4 className="text-lg font-black text-main uppercase italic mb-2">Content Locked</h4>
+                                                    <p className="text-[10px] font-bold text-gray-400 mb-8 uppercase tracking-widest max-w-[200px] mx-auto italic"> Enroll or Login to unlock this premium Studio session </p>
+                                                    {!isAuthenticated ? (
+                                                       <button 
+                                                         onClick={() => dispatch(openLoginModal())}
+                                                         className="px-8 py-3 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] italic hover:bg-emerald-700 shadow-lg shadow-emerald-100 transition-all active:scale-95"
+                                                       >
+                                                         Start Learning
+                                                       </button>
+                                                    ) : (
+                                                       <button 
+                                                         onClick={handleEnroll}
+                                                         className="px-8 py-3 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] italic hover:bg-opacity-90 shadow-lg shadow-primary/10 transition-all active:scale-95"
+                                                       >
+                                                         Enroll Now
+                                                       </button>
+                                                    )}
                                                 </div>
                                               )}
                                             </motion.div>

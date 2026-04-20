@@ -11,7 +11,7 @@ import { openLoginModal, openSignupModal, userLogout } from "../../pages/user/au
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 
-const Header = () => {
+const Header = ({ hideNavbar = false }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
@@ -50,28 +50,45 @@ const Header = () => {
           </Link>
 
           {/* Desktop Navbar */}
-          <div className="hidden lg:block">
-            <Navbar isScrolled={isScrolled} />
-          </div>
+          {!hideNavbar && (
+            <div className="hidden lg:block">
+              <Navbar isScrolled={isScrolled} />
+            </div>
+          )}
 
           {/* Action Buttons */}
           <div className="hidden md:flex items-center gap-3">
             {isAuthenticated ? (
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-bold text-main italic">Welcome, {user?.user_name || 'Student'}</span>
-                {user?.role?.type === 'admin' && (
-                  <Link to="/admin" className="px-4 py-2 rounded-xl bg-gray-100 text-main hover:bg-gray-200 text-xs font-bold transition flex items-center gap-1">
-                    <MdDashboard /> Admin
-                  </Link>
-                )}
-                <button 
-                  onClick={() => setIsLogoutModalOpen(true)}
-                  className="p-2 rounded-full text-red-500 hover:bg-red-50 transition flex items-center justify-center"
-                  title="Logout"
-                >
-                  <MdLogout size={20} />
-                </button>
-              </div>
+              hideNavbar ? (
+                /* Minimalist Profile Icon for Dashboard (No Action) */
+                <div className="w-10 h-10 rounded-full border-2 border-gray-100 p-0.5 overflow-hidden">
+                   <img 
+                    src={user?.profile_img || "https://cdn-icons-png.flaticon.com/512/149/149071.png"} 
+                    alt="User" 
+                    className="w-full h-full rounded-full object-cover"
+                   />
+                </div>
+              ) : (
+                <div className="flex items-center gap-4">
+                  <span className="text-sm font-bold text-main italic">Welcome, {user?.user_name || 'Student'}</span>
+                  {user?.role?.type === 'admin' ? (
+                    <Link to="/admin" className="px-4 py-2 rounded-xl bg-gray-100 text-main hover:bg-gray-200 text-xs font-bold transition flex items-center gap-1">
+                      <MdDashboard /> Admin
+                    </Link>
+                  ) : (
+                    <Link to="/user/dashboard" className="px-4 py-2 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-100 text-xs font-bold transition flex items-center gap-1">
+                      <MdDashboard /> My Dashboard
+                    </Link>
+                  )}
+                  <button 
+                    onClick={() => setIsLogoutModalOpen(true)}
+                    className="p-2 rounded-full text-red-500 hover:bg-red-50 transition flex items-center justify-center"
+                    title="Logout"
+                  >
+                    <MdLogout size={20} />
+                  </button>
+                </div>
+              )
             ) : (
               <>
                 <button 
@@ -108,7 +125,7 @@ const Header = () => {
         className="lg:hidden bg-white overflow-hidden border-b border-gray-100"
       >
         <div className="px-4 py-6 flex flex-col gap-4">
-          <Navbar isMobile onItemClick={() => setIsMobileMenuOpen(false)} />
+          {!hideNavbar && <Navbar isMobile onItemClick={() => setIsMobileMenuOpen(false)} />}
           <div className="grid grid-cols-2 gap-3 pt-4 border-t border-gray-50">
             {isAuthenticated ? (
                <button onClick={() => { setIsLogoutModalOpen(true); setIsMobileMenuOpen(false); }} className="col-span-2 flex items-center justify-center gap-2 py-3 bg-red-50 text-red-600 rounded-xl text-sm font-bold">

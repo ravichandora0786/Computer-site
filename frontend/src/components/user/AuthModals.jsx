@@ -13,8 +13,11 @@ import {
 } from "../../pages/user/auth/slice";
 import LoadingButton from "../ui/LoadingButton";
 
+import { useNavigate } from "react-router-dom";
+
 const AuthModals = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { isLoginModalOpen, isSignupModalOpen, loading, error } = useSelector((state) => state.userAuth);
 
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
@@ -22,12 +25,18 @@ const AuthModals = () => {
 
   const handleLoginSubmit = (e) => {
     e.preventDefault();
-    dispatch(userLoginRequest({ data: loginForm }));
+    dispatch(userLoginRequest({ 
+      data: loginForm,
+      onSuccess: () => navigate("/user/dashboard")
+    }));
   };
 
   const handleSignupSubmit = (e) => {
     e.preventDefault();
-    dispatch(userRegisterRequest({ data: signupForm }));
+    dispatch(userRegisterRequest({ 
+      data: signupForm,
+      onSuccess: () => navigate("/user/dashboard")
+    }));
   };
 
   const switchToSignup = () => {

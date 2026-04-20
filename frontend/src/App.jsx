@@ -34,6 +34,10 @@ import TermsList from './pages/admin/terms/TermsList'
 import AddUpdateTerms from './pages/admin/terms/AddUpdateTerms'
 import PrivateRoute from './routes/PrivateRoute'
 
+import DashboardLayout from './components/user/DashboardLayout'
+import UserDashboard from './pages/user/dashboard/UserDashboard'
+import { UserPrivateRoute, PublicOnlyRoute } from './routes/UserRoutes'
+
 // Public Layout and Pages
 import UserLayout from './components/user/UserLayout'
 import HomePage from './pages/user/home'
@@ -99,19 +103,38 @@ function App() {
           </PrivateRoute>
         } />
 
-        {/* User Routes wrapped in UserLayout (Catch-all for all other paths) */}
+        {/* User Student Dashboard - Protected */}
+        <Route path="/user/*" element={
+          <UserPrivateRoute>
+            <DashboardLayout>
+              <Routes>
+                <Route path="dashboard" element={<UserDashboard />} />
+              </Routes>
+            </DashboardLayout>
+          </UserPrivateRoute>
+        } />
+
+        {/* User Public Routes wrapped in UserLayout (Restricted if logged in) */}
         <Route path="/*" element={
+          <PublicOnlyRoute>
+            <UserLayout>
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/courses" element={<CoursesPage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/contact" element={<ContactPage />} />
+                <Route path="/faq" element={<FAQPage />} />
+                <Route path="/terms" element={<PublicTermsPage />} />
+                <Route path="/policy" element={<PolicyPage />} />
+              </Routes>
+            </UserLayout>
+          </PublicOnlyRoute>
+        } />
+
+        {/* Exception: Course detail is public but internal content is locked */}
+        <Route path="/course-detail/:id" element={
           <UserLayout>
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/courses" element={<CoursesPage />} />
-              <Route path="/course-detail/:id" element={<CourseDetail />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/contact" element={<ContactPage />} />
-              <Route path="/faq" element={<FAQPage />} />
-              <Route path="/terms" element={<PublicTermsPage />} />
-              <Route path="/policy" element={<PolicyPage />} />
-            </Routes>
+            <CourseDetail />
           </UserLayout>
         } />
       </Routes>
