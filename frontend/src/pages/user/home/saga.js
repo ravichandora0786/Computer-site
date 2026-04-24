@@ -4,26 +4,46 @@ import { httpRequest, endPoints } from "@/request";
 
 function* handleFetchHome() {
   try {
-    console.log("Computer Site Debug: Starting full data fetch in saga...");
-    
-    // Fetch multiple data points for the professional homepage in parallel
+    // Individual wrappers to prevent one failure from blocking everything
+    const fetchSafe = function* (endpoint) {
+      try {
+        return yield call(httpRequest.get, endpoint);
+      } catch (e) {
+        console.error(`Saga Fetch Error for ${endpoint}:`, e);
+        return { data: [] }; // Return empty structure consistent with axios unwrap
+      }
+    };
+
     const [courses, mentors, ratings, about] = yield all([
-      call(httpRequest.get, endPoints.CourseList),
-      call(httpRequest.get, endPoints.MentorList),
-      call(httpRequest.get, endPoints.PlatformRatings),
-      call(httpRequest.get, endPoints.AboutSectionsList),
+      fetchSafe(endPoints.CourseList),
+      fetchSafe(endPoints.MentorList),
+      fetchSafe(endPoints.PlatformRatings),
+      fetchSafe(endPoints.AboutSectionsList),
     ]);
 
-    console.log("Computer Site Debug: Saga data fetched successfully", { courses, mentors, ratings, about });
+    // Resilient data extraction helper
+    const extractData = (payload) => {
+      if (!payload) return [];
+      
+      // If it's the ApiResponse wrapper { success, data, message }
+      let data = payload.data !== undefined ? payload.data : payload;
+      
+      // If the data itself has an 'items' array (pagination structure)
+      if (data && data.items && Array.isArray(data.items)) return data.items;
+      
+      // If the data is already an array
+      if (Array.isArray(data)) return data;
+      
+      return data ? (Array.isArray(data) ? data : [data]) : [];
+    };
 
     yield put(fetchHomeSuccess({
-      courses: courses?.data?.items || [],
-      mentors: mentors?.data || [],
-      ratings: ratings?.data || [],
-      about: about?.data || []
+      courses: extractData(courses),
+      mentors: extractData(mentors),
+      ratings: extractData(ratings),
+      about: extractData(about)
     }));
   } catch (error) {
-    console.error("Computer Site Debug: Home Data Fetch FAILED", error);
     yield put(fetchHomeFailure(error.message));
   }
 }

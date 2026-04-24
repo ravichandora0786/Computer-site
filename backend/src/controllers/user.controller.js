@@ -226,6 +226,26 @@ const updateProfile = asyncHandler(async (req, res, next) => {
   }
 })
 
+/** Get Mentors (publicly visible teachers) */
+const getMentors = asyncHandler(async (req, res, next) => {
+  const mentors = await UserModel.findAll({
+    include: [{
+      model: RoleModel,
+      as: 'role',
+      where: { type: 'teacher' },
+      attributes: [] // Filter by role type but don't include role data in response
+    }],
+    where: {
+      account_status: 'active'
+    },
+    attributes: ['id', 'user_name', 'profile_img', 'designation', 'phone', 'email']
+  })
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, mentors, 'Mentors fetched successfully'))
+})
+
 export default {
   getUsers,
   getUserById,
@@ -234,5 +254,6 @@ export default {
   deleteUser,
   getUserOptions,
   getDashboardStats,
-  updateProfile
+  updateProfile,
+  getMentors
 }

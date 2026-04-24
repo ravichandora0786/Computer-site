@@ -10,6 +10,8 @@ import {
 import { fetchHomeData } from "./slice";
 import { selectHomeLoading, selectHomeData } from "./selector";
 import CourseCard from "@/components/user/CourseCard";
+import CourseSlider from "@/components/user/CourseSlider";
+import { apiBase } from "@/request";
 import clsx from "clsx";
 
 const Home = () => {
@@ -164,16 +166,8 @@ const Home = () => {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-5">
-            {courses.length > 0 ? (
-              courses.slice(0, 6).map((course, i) => (
-                <CourseCard key={course.id || i} course={course} />
-              ))
-            ) : (
-              <div className="col-span-full py-20 text-center text-gray-400 font-bold italic border-2 border-dashed border-gray-100 rounded-[3rem]">
-                No courses published yet. Check back soon for the next elite session!
-              </div>
-            )}
+          <div className="relative">
+            <CourseSlider courses={courses} />
           </div>
         </div>
       </section>
@@ -193,7 +187,7 @@ const Home = () => {
                 <div key={mentor.id} className="group relative w-full sm:w-[280px]">
                   <div className="relative aspect-[3/4] rounded-[3rem] overflow-hidden mb-6 shadow-xl grayscale-[0.8] group-hover:grayscale-0 transition-all duration-700">
                     <img 
-                      src={mentor.profile_img || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=600"} 
+                      src={mentor.profile_img ? `${apiBase}${mentor.profile_img}` : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=600"} 
                       alt={mentor.user_name} 
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                     />

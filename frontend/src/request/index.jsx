@@ -7,7 +7,7 @@ import {
   setFullScreenLoader,
 } from "../pages/admin/common/slice";
 
-const baseURL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const baseURL = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
 const apiTimeout = 30000;
 
 const httpRequest = axios.create({
@@ -123,5 +123,7 @@ const getErrorMessage = (error) => {
 
   return fallback;
 };
+
+export const apiBase = baseURL.replace("/api/v1", "");
 
 export { httpRequest, endPoints };
