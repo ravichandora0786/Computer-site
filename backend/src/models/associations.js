@@ -20,7 +20,6 @@ import LessonProgressModel from './lessonProgress.model.js'
 import TestAttemptModel from './testAttempt.model.js'
 import TestAttemptAnswerModel from './testAttemptAnswer.model.js'
 import OfflineBatchModel from './offlineBatch.model.js'
-import UserPageProgressModel from './userPageProgress.model.js'
 
 // New Models
 import PlatformRatingModel from './platformRating.model.js'
@@ -152,18 +151,6 @@ CourseRatingModel.belongsTo(UserModel, { foreignKey: 'user_id', as: 'user' })
 UserModel.hasMany(PrivacyPolicyModel, { foreignKey: 'updated_by', as: 'updated_policies' })
 PrivacyPolicyModel.belongsTo(UserModel, { foreignKey: 'updated_by', as: 'admin' })
 
-// User - UserPageProgress
-UserModel.hasMany(UserPageProgressModel, { foreignKey: 'user_id', as: 'page_progress', onDelete: 'CASCADE' })
-UserPageProgressModel.belongsTo(UserModel, { foreignKey: 'user_id', as: 'user' })
-
-// LessonPage - UserPageProgress
-LessonPageModel.hasMany(UserPageProgressModel, { foreignKey: 'page_id', as: 'user_progress', onDelete: 'CASCADE' })
-UserPageProgressModel.belongsTo(LessonPageModel, { foreignKey: 'page_id', as: 'page' })
-
-// Lesson - UserPageProgress
-LessonModel.hasMany(UserPageProgressModel, { foreignKey: 'lesson_id', as: 'userPageProgress', onDelete: 'CASCADE' })
-UserPageProgressModel.belongsTo(LessonModel, { foreignKey: 'lesson_id', as: 'lesson' })
-
 export {
   UserModel,
   CourseCategoryModel,
@@ -197,5 +184,4 @@ export {
   FAQModel,
   PrivacyPolicyModel,
   AboutSectionModel,
-  UserPageProgressModel,
 }

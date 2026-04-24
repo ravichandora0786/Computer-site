@@ -36,7 +36,9 @@ const hideLoader = () => {
 };
 
 httpRequest.interceptors.request.use((config) => {
-  showLoader();
+  if (!config.silent) {
+    showLoader();
+  }
   const state = store.getState();
   const isAdminPath = typeof window !== "undefined" && window.location.pathname.startsWith("/admin");
   
@@ -56,14 +58,18 @@ httpRequest.interceptors.request.use((config) => {
 
 httpRequest.interceptors.response.use(
   (res) => {
-    hideLoader();
+    if (!res.config?.silent) {
+      hideLoader();
+    }
     if (res?.data?.error) {
       return Promise.reject(new Error(res?.data?.error));
     }
     return res.data;
   },
   async (err) => {
-    hideLoader();
+    if (!err.config?.silent) {
+      hideLoader();
+    }
     const originalRequest = err.config;
     const isAuthRequest = originalRequest.url.includes("/auth/");
 

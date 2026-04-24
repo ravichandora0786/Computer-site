@@ -21,8 +21,10 @@ const endPoints = {
   // Users
   UserList: "/users",
   UserById: "/users/getById",
+  UserDashboardStats: "/users/dashboard-stats",
   CreateUser: "/users/create",
   UpdateUser: "/users/update",
+  UpdateUserProfile: "/users/update-profile",
   UpdateByAdmin: "/users/updateByAdmin",
   DeleteUser: "/users/delete",
   UpdateUserStatus: "/users/updateStatus",

@@ -10,13 +10,13 @@ const RenderFields = ({ fields = [], setFieldValue, values, errors, touched }) =
   return (
     <div className="grid grid-cols-1 gap-4 md:gap-5 md:grid-cols-2">
       {fields.map((field) => {
-        const { name, label, type, placeholder, options, className, disabled, fullWidth, required } = field;
+        const { name, label, type, placeholder, options, className, disabled, fullWidth, required, ...rest } = field;
         const isError = touched[name] && errors[name];
 
         const commonClass = clsx(
-          "w-full rounded-[10px] border bg-gray-50/30 px-4 py-3 text-sm font-semibold transition-all focus:outline-none focus:ring-4 focus:ring-primary/10 placeholder:text-gray-400 placeholder:font-normal",
-          isError ? "border-red-400 focus:border-red-500 bg-red-50/30" : "border-gray-200 focus:border-primary/50 focus:bg-white",
-          disabled && "bg-gray-100 cursor-not-allowed opacity-60",
+          "w-full rounded-[10px] border bg-gray-50/30 dark:bg-gray-800/30 px-4 py-3 text-sm font-semibold transition-all focus:outline-none focus:ring-4 focus:ring-primary/10 placeholder:text-gray-400 placeholder:font-normal dark:text-white",
+          isError ? "border-red-400 focus:border-red-500 bg-red-50/30" : "border-gray-200 dark:border-gray-700 focus:border-primary/50 focus:bg-white dark:focus:bg-gray-800",
+          disabled && "bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60",
           className
         );
 
@@ -93,6 +93,7 @@ const RenderFields = ({ fields = [], setFieldValue, values, errors, touched }) =
                 className={commonClass}
                 placeholder={placeholder}
                 disabled={disabled}
+                {...rest}
               />
             )}
 

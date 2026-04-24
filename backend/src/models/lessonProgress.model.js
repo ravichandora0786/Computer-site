@@ -45,6 +45,11 @@ const LessonProgressModel = sequelize.define(
     completed_at: {
       type: DataTypes.DATE,
     },
+    pages_data: {
+      type: DataTypes.JSON,
+      defaultValue: {},
+      comment: 'Stores page progress: { pageId: { time_spent, is_completed, completed_at } }',
+    },
   },
   {
     timestamps: true,

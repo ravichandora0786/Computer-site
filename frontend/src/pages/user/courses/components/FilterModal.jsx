@@ -46,17 +46,17 @@ const FilterModal = ({
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-        className="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl overflow-hidden overflow-y-auto max-h-[90vh]"
+        className="relative w-full max-w-2xl bg-white dark:bg-gray-900 rounded-[3rem] shadow-2xl overflow-hidden overflow-y-auto max-h-[90vh]"
       >
         {/* Header */}
-        <div className="p-8 border-b border-gray-50 flex items-center justify-between bg-white sticky top-0 z-10">
+        <div className="p-8 border-b border-gray-50 dark:border-gray-800 flex items-center justify-between bg-white dark:bg-gray-900 sticky top-0 z-10">
           <div>
             <h2 className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-1 italic">Filter Catalog</h2>
-            <h3 className="text-3xl font-black text-main tracking-tighter uppercase italic">Mastery Setup</h3>
+            <h3 className="text-3xl font-black text-main dark:text-white tracking-tighter uppercase italic">Mastery Setup</h3>
           </div>
           <button 
             onClick={onClose}
-            className="h-12 w-12 rounded-2xl bg-gray-50 flex items-center justify-center text-main hover:bg-primary hover:text-white transition-all shadow-sm"
+            className="h-12 w-12 rounded-2xl bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-main dark:text-white hover:bg-primary hover:text-white transition-all shadow-sm"
           >
             <MdClose size={24} />
           </button>
@@ -73,7 +73,7 @@ const FilterModal = ({
                 onClick={() => handleLocalChange("category_id", "")}
                 className={clsx(
                   "px-6 py-3 rounded-xl text-xs font-bold transition-all border-2",
-                  localFilters.category_id === "" ? "border-primary bg-primary text-white shadow-lg shadow-primary/20" : "border-gray-100 text-gray-500 hover:border-primary/30"
+                  localFilters.category_id === "" ? "border-primary bg-primary text-white shadow-lg shadow-primary/20" : "border-gray-100 dark:border-gray-800 text-gray-500 dark:text-gray-400 hover:border-primary/30"
                 )}
               >
                 All Subjects
@@ -84,7 +84,7 @@ const FilterModal = ({
                   onClick={() => handleLocalChange("category_id", cat.value)}
                   className={clsx(
                     "px-6 py-3 rounded-xl text-xs font-bold transition-all border-2",
-                    localFilters.category_id === cat.value ? "border-primary bg-primary text-white shadow-lg shadow-primary/20" : "border-gray-100 text-gray-500 hover:border-primary/30"
+                    localFilters.category_id === cat.value ? "border-primary bg-primary text-white shadow-lg shadow-primary/20" : "border-gray-100 dark:border-gray-800 text-gray-500 dark:text-gray-400 hover:border-primary/30"
                   )}
                 >
                   {cat.label}
@@ -104,7 +104,7 @@ const FilterModal = ({
                     onClick={() => handleLocalChange("access_type", localFilters.access_type === type ? "" : type)}
                     className={clsx(
                       "px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2 flex items-center justify-center gap-2",
-                      localFilters.access_type === type ? "border-primary bg-primary text-white shadow-xl shadow-primary/20" : "border-gray-100 text-gray-400 hover:bg-gray-50 bg-white"
+                      localFilters.access_type === type ? "border-primary bg-primary text-white shadow-xl shadow-primary/20" : "border-gray-100 dark:border-gray-800 text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-gray-900"
                     )}
                   >
                     {localFilters.access_type === type && <MdCheck size={16} />} {type}
@@ -123,7 +123,7 @@ const FilterModal = ({
                     onClick={() => handleLocalChange("course_mode", localFilters.course_mode === mode ? "" : mode)}
                     className={clsx(
                       "px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2 flex items-center justify-center gap-2",
-                      localFilters.course_mode === mode ? "border-primary bg-primary text-white shadow-xl shadow-primary/20" : "border-gray-100 text-gray-400 hover:bg-gray-50 bg-white"
+                      localFilters.course_mode === mode ? "border-primary bg-primary text-white shadow-xl shadow-primary/20" : "border-gray-100 dark:border-gray-800 text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-gray-900"
                     )}
                   >
                     {localFilters.course_mode === mode && <MdCheck size={16} />} {mode}
@@ -136,10 +136,10 @@ const FilterModal = ({
         </div>
 
         {/* Footer */}
-        <div className="p-8 bg-gray-50/50 flex flex-col sm:flex-row items-center gap-4">
+        <div className="p-8 bg-gray-50/50 dark:bg-[#050505] border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-center gap-4">
           <button 
             onClick={handleReset}
-            className="w-full sm:w-auto px-8 py-5 rounded-2xl border-2 border-dashed border-gray-200 text-gray-400 text-xs font-black uppercase tracking-widest hover:border-primary hover:text-primary transition-all flex items-center justify-center gap-2"
+            className="w-full sm:w-auto px-8 py-5 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 text-xs font-black uppercase tracking-widest hover:border-primary hover:text-primary transition-all flex items-center justify-center gap-2"
           >
             <MdRefresh size={20} /> Reset Setup
           </button>

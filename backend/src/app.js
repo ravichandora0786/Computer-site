@@ -43,6 +43,15 @@ app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 // Serve structured media directory as static
 app.use('/media', express.static(path.join(process.cwd(), 'public', 'media')))
 
+// TRACE LOGGER
+app.use((req, res, next) => {
+  if (req.url.includes('progress')) {
+    console.log(`[TRACE] Incoming ${req.method} request to ${req.url}`);
+    console.log(`[TRACE] Body:`, JSON.stringify(req.body, null, 2));
+  }
+  next();
+});
+
 app.use(morganMiddleware);
 
 //routes

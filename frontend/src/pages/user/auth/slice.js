@@ -8,6 +8,7 @@ const initialState = {
   error: null,
   isLoginModalOpen: false,
   isSignupModalOpen: false,
+  dashboardStats: null,
 };
 
 const userAuthSlice = createSlice({
@@ -82,6 +83,12 @@ const userAuthSlice = createSlice({
         }
         state.user.enrolled_courses.push(action.payload);
       }
+    },
+    updateProfileSuccess: (state, action) => {
+      state.user = { ...state.user, ...action.payload };
+    },
+    setDashboardStats: (state, action) => {
+      state.dashboardStats = action.payload;
     }
   },
 });
@@ -99,7 +106,9 @@ export const {
   userRegisterFailure,
   userLogout,
   clearAuthError,
-  enrollCourseSuccess
+  enrollCourseSuccess,
+  updateProfileSuccess,
+  setDashboardStats
 } = userAuthSlice.actions;
 
 export default userAuthSlice.reducer;

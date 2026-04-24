@@ -7,7 +7,7 @@ import fs from 'fs'
 import { ApiResponse } from '../utils/ApiResponse.js'
 import { ApiError } from '../utils/ApiError.js'
 import { responseMessage } from '../utils/responseMessage.js'
-import { CourseModel, CourseCategoryModel, UserModel, CourseMediaModel, CourseModuleModel, LessonModel, LessonPageModel, UserCourseModel, LessonProgressModel, ModuleTestModel, UserPageProgressModel } from '../models/associations.js'
+import { CourseModel, CourseCategoryModel, UserModel, CourseMediaModel, CourseModuleModel, LessonModel, LessonPageModel, UserCourseModel, LessonProgressModel, ModuleTestModel } from '../models/associations.js'
 
 /** Get all courses with pagination */
 const getCourses = asyncHandler(async (req, res, next) => {
@@ -127,14 +127,6 @@ const getCourseById = asyncHandler(async (req, res, next) => {
               { 
                 model: LessonPageModel, 
                 as: 'pages',
-                include: [
-                  {
-                    model: UserPageProgressModel,
-                    as: 'user_progress',
-                    where: req.user ? { user_id: req.user.id } : { user_id: null },
-                    required: false
-                  }
-                ]
               },
               { 
                 model: LessonProgressModel, 
@@ -159,6 +151,26 @@ const getCourseById = asyncHandler(async (req, res, next) => {
   }
 
   const courseJson = course.toJSON();
+
+  // Manually map JSON pages_data into page objects for the frontend
+  if (courseJson.modules) {
+    courseJson.modules.forEach(module => {
+      if (module.lessons) {
+        module.lessons.forEach(lesson => {
+          const progress = lesson.userProgress?.[0];
+          const pagesData = progress?.pages_data || {};
+          
+          if (lesson.pages) {
+            lesson.pages.forEach(page => {
+              // Reconstruct the user_progress array format for frontend compat
+              page.user_progress = pagesData[page.id] ? [pagesData[page.id]] : [];
+            });
+          }
+        });
+      }
+    });
+  }
+
   courseJson.isEnrolled = false;
 
   // Add enrollment status if user is logged in

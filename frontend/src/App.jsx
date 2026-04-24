@@ -2,7 +2,8 @@ import React from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
-import { useSelector } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux'
+import { useEffect } from 'react'
 import FullScreenLoader from './components/ui/FullScreenLoader'
 import { selectScreenLoader } from './pages/admin/common/selector'
 
@@ -36,7 +37,9 @@ import PrivateRoute from './routes/PrivateRoute'
 
 import DashboardLayout from './components/user/DashboardLayout'
 import UserDashboard from './pages/user/dashboard/UserDashboard'
+import ProfileSettings from './pages/user/profile/ProfileSettings'
 import { UserPrivateRoute, PublicOnlyRoute } from './routes/UserRoutes'
+import FloatingActions from './components/user/FloatingActions'
 
 // Public Layout and Pages
 import UserLayout from './components/user/UserLayout'
@@ -51,6 +54,15 @@ import CourseDetail from './pages/user/courses/CourseDetail'
 
 function App() {
   const isFullScreenLoading = useSelector(selectScreenLoader)
+  const { darkMode } = useSelector((state) => state.common)
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  }, [darkMode])
 
   return (
     <>
@@ -106,11 +118,22 @@ function App() {
         {/* User Student Dashboard - Protected */}
         <Route path="/user/*" element={
           <UserPrivateRoute>
-            <DashboardLayout>
-              <Routes>
-                <Route path="dashboard" element={<UserDashboard />} />
-              </Routes>
-            </DashboardLayout>
+            <Routes>
+              <Route path="profile" element={
+                <UserLayout>
+                  <ProfileSettings />
+                </UserLayout>
+              } />
+              <Route path="*" element={
+                <DashboardLayout>
+                  <Routes>
+                    <Route path="dashboard" element={<UserDashboard />} />
+                    <Route path="courses" element={<CoursesPage />} />
+                    <Route path="my-courses" element={<CoursesPage />} />
+                  </Routes>
+                </DashboardLayout>
+              } />
+            </Routes>
           </UserPrivateRoute>
         } />
 
@@ -139,6 +162,7 @@ function App() {
         } />
       </Routes>
       <ToastContainer position="bottom-right" />
+      <FloatingActions />
     </>
   )
 }

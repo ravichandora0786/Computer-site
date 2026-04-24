@@ -16,5 +16,7 @@ userRouter.post('/update', userController.updateUser)
 userRouter.post('/delete', userController.deleteUser)
 userRouter.post('/updateStatus', userController.updateUser) // Reusing update for status if needed
 userRouter.get('/options', userController.getUserOptions)
+userRouter.get('/dashboard-stats', userController.getDashboardStats)
+userRouter.post('/update-profile', userController.updateProfile)
 
 export default userRouter

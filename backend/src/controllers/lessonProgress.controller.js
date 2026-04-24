@@ -1,12 +1,11 @@
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { ApiResponse } from '../utils/ApiResponse.js'
 import { ApiError } from '../utils/ApiError.js'
-import { 
-  LessonProgressModel, 
-  UserCourseModel, 
-  LessonModel, 
+import {
+  LessonProgressModel,
+  UserCourseModel,
+  LessonModel,
   CourseModuleModel,
-  UserPageProgressModel,
   LessonPageModel
 } from '../models/associations.js'
 
@@ -70,8 +69,8 @@ export const updateLessonProgress = asyncHandler(async (req, res) => {
   } else {
     let targetModuleId = moduleId;
     if (!targetModuleId) {
-        const lesson = await LessonModel.findByPk(lessonId);
-        targetModuleId = lesson?.module_id;
+      const lesson = await LessonModel.findByPk(lessonId);
+      targetModuleId = lesson?.module_id;
     }
 
     lessonProgress = await LessonProgressModel.create({
@@ -95,7 +94,9 @@ export const updateLessonProgress = asyncHandler(async (req, res) => {
 /** Update individual page time/progress (Heartbeat/Pulse) */
 export const updatePageProgress = asyncHandler(async (req, res) => {
   const { pageId, lessonId, courseId, secondsIncrement } = req.body
-  const userId = req.user.id
+  const userId = req.user?.id
+
+  console.log('UpdatePageProgress called:', { pageId, lessonId, courseId, secondsIncrement, userId });
 
   if (!pageId || !lessonId || !courseId) {
     throw new ApiError(400, "Page ID, Lesson ID, and Course ID are required")
@@ -103,75 +104,83 @@ export const updatePageProgress = asyncHandler(async (req, res) => {
 
   // 1. Get Page Requirements
   const page = await LessonPageModel.findByPk(pageId)
-  if (!page) throw new ApiError(404, "Page not found")
-
-  const requiredSeconds = (page.required_time || 0) * 60
-
-  // 2. Update Page Progress
-  let pageProgress = await UserPageProgressModel.findOne({
-    where: { user_id: userId, page_id: pageId }
-  })
-
-  if (!pageProgress) {
-    pageProgress = await UserPageProgressModel.create({
-      user_id: userId,
-      page_id: pageId,
-      lesson_id: lessonId,
-      course_id: courseId,
-      time_spent: secondsIncrement || 0,
-      is_completed: (secondsIncrement || 0) >= requiredSeconds && requiredSeconds > 0
-    })
-  } else {
-    const newTime = pageProgress.time_spent + (secondsIncrement || 0)
-    const isNowCompleted = newTime >= requiredSeconds && requiredSeconds > 0
-    
-    await pageProgress.update({
-      time_spent: newTime,
-      is_completed: pageProgress.is_completed || isNowCompleted,
-      completed_at: (isNowCompleted && !pageProgress.is_completed) ? new Date() : pageProgress.completed_at
-    })
+  if (!page) {
+    console.error('Page not found:', pageId);
+    throw new ApiError(404, "Page not found")
   }
 
-  // 3. Recalculate Lesson Progress
-  const totalPagesInLesson = await LessonPageModel.count({ where: { lesson_id: lessonId } })
-  const masteredPagesCount = await UserPageProgressModel.count({ 
-    where: { user_id: userId, lesson_id: lessonId, is_completed: true } 
-  })
+  const requiredSeconds = (page.required_time || 0)
 
-  const lessonPercentage = totalPagesInLesson > 0 
-    ? Math.round((masteredPagesCount / totalPagesInLesson) * 100) 
-    : 0
-
+  // 2. Fetch or Create Lesson Progress (The central record)
   let lessonProgress = await LessonProgressModel.findOne({
     where: { lesson_id: lessonId, student_id: userId }
   })
 
-  if (lessonProgress) {
-    await lessonProgress.update({
-      progress: lessonPercentage,
-      is_completed: lessonPercentage >= 90,
-      completed_at: lessonPercentage >= 90 ? new Date() : lessonProgress.completed_at
-    })
-  } else {
-    lessonProgress = await LessonProgressModel.create({
-      lesson_id: lessonId,
-      student_id: userId,
-      course_id: courseId,
-      progress: lessonPercentage,
-      is_completed: lessonPercentage >= 90,
-      completed_at: lessonPercentage >= 90 ? new Date() : null
-    })
+  if (!lessonProgress) {
+    console.log('LessonProgress not found, creating new one...');
+    // Get module_id from Lesson model first
+    const lessonData = await LessonModel.findByPk(lessonId);
+    const moduleId = lessonData?.module_id;
+    
+    if (!moduleId) {
+        console.error('Module ID not found for lesson:', lessonId);
+    }
+
+    try {
+        lessonProgress = await LessonProgressModel.create({
+            lesson_id: lessonId,
+            student_id: userId,
+            course_id: courseId,
+            module_id: moduleId,
+            pages_data: {},
+            progress: 0
+        })
+        console.log('New LessonProgress created with ID:', lessonProgress.id);
+    } catch (createError) {
+        console.error('FAILED TO CREATE LESSON PROGRESS:', createError);
+        throw createError;
+    }
   }
 
-  // 4. Final Sync for Course
+  // 3. Update the JSON pages_data
+  const pagesData = { ...(lessonProgress.pages_data || {}) };
+  console.log('Current pages_data:', pagesData);
+  const currentPageData = pagesData[pageId] || { time_spent: 0, is_completed: false };
+
+  const newTime = currentPageData.time_spent + (secondsIncrement || 0)
+  const isNowCompleted = newTime >= requiredSeconds;
+
+  pagesData[pageId] = {
+    time_spent: newTime,
+    is_completed: currentPageData.is_completed || isNowCompleted,
+    completed_at: (isNowCompleted && !currentPageData.is_completed) ? new Date() : currentPageData.completed_at
+  };
+
+  // 4. Calculate Lesson Percentage from JSON
+  const totalPagesInLesson = await LessonPageModel.count({ where: { lesson_id: lessonId } })
+  const masteredPagesCount = Object.values(pagesData).filter(p => p.is_completed).length;
+
+  const lessonPercentage = totalPagesInLesson > 0
+    ? Math.round((masteredPagesCount / totalPagesInLesson) * 100)
+    : 0
+
+  // 5. Save Lesson Progress
+  await lessonProgress.update({
+    pages_data: pagesData,
+    progress: lessonPercentage,
+    is_completed: lessonPercentage >= 90,
+    completed_at: lessonPercentage >= 90 ? (lessonProgress.completed_at || new Date()) : lessonProgress.completed_at
+  });
+
+  // 6. Final Sync for Overall Course
   const overallProgress = await syncCourseProgress(userId, courseId)
 
   return res.status(200).json(
-    new ApiResponse(200, { 
-      pageProgress, 
-      lessonProgress, 
-      overallProgress 
-    }, "Page time tracked successfully")
+    new ApiResponse(200, {
+      pageProgress: pagesData[pageId], // Return the current page data for compatibility
+      lessonProgress,
+      overallProgress
+    }, "Page time tracked successfully in JSON")
   )
 })
 

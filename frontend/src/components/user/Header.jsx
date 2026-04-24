@@ -8,8 +8,15 @@ import clsx from "clsx";
 import { openLoginModal, openSignupModal, userLogout } from "../../pages/user/auth/slice";
 
 
-import { Dialog, Transition } from "@headlessui/react";
+import { Dialog, Transition, Menu } from "@headlessui/react";
 import { Fragment } from "react";
+import { 
+  MdStars, MdAssignment, MdLibraryBooks, 
+  MdDescription, MdAssessment, MdVerified, MdSettings,
+  MdHelpOutline, MdCardGiftcard, MdPerson, MdEdit,
+  MdLightMode, MdDarkMode
+} from "react-icons/md";
+import { toggleDarkMode } from "../../pages/admin/common/slice";
 
 const Header = ({ hideNavbar = false }) => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -18,6 +25,7 @@ const Header = ({ hideNavbar = false }) => {
   const location = useLocation();
   const dispatch = useDispatch();
   const { isAuthenticated, user } = useSelector((state) => state.userAuth);
+  const { darkMode } = useSelector((state) => state.common);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -27,13 +35,23 @@ const Header = ({ hideNavbar = false }) => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const menuItems = [
+    { name: "Dashboard", path: "/user/dashboard", icon: MdDashboard },
+    { name: "Courses", path: "/user/courses", icon: MdLibraryBooks },
+    { name: "My Courses", path: "/user/my-courses", icon: MdLibraryBooks },
+    { name: "Learner Report", path: "/user/report", icon: MdAssessment },
+    { name: "Claim Your Certificates", path: "/user/certificates", icon: MdVerified },
+  ];
+
   return (
     <header
       className={clsx(
         "fixed top-0 left-0 right-0 z-[100] transition-all duration-300",
-        isScrolled 
-          ? "bg-white/80 backdrop-blur-xl border-b border-gray-100 shadow-sm py-3" 
-          : "bg-transparent py-5"
+        hideNavbar 
+          ? "bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 py-3 shadow-sm"
+          : (isScrolled 
+              ? "bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 shadow-sm py-3" 
+              : "bg-transparent py-5")
       )}
     >
       <div className="container max-w-full mx-auto px-4 md:px-6">
@@ -50,45 +68,106 @@ const Header = ({ hideNavbar = false }) => {
           </Link>
 
           {/* Desktop Navbar */}
-          {!hideNavbar && (
+          {!hideNavbar && !isAuthenticated && (
             <div className="hidden lg:block">
               <Navbar isScrolled={isScrolled} />
             </div>
           )}
 
           {/* Action Buttons */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="flex items-center gap-3">
+            {/* Theme Toggle Button */}
+            <button
+              onClick={() => dispatch(toggleDarkMode())}
+              className="p-2 lg:p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 transition-all active:scale-90"
+              title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {darkMode ? <MdLightMode size={22} className="text-amber-400" /> : <MdDarkMode size={22} />}
+            </button>
+
             {isAuthenticated ? (
-              hideNavbar ? (
-                /* Minimalist Profile Icon for Dashboard (No Action) */
-                <div className="w-10 h-10 rounded-full border-2 border-gray-100 p-0.5 overflow-hidden">
-                   <img 
+              <Menu as="div" className="relative">
+                <Menu.Button className="w-10 h-10 rounded-full border-2 border-gray-100 p-0.5 overflow-hidden hover:border-primary transition-all active:scale-95 flex items-center justify-center">
+                  <img 
                     src={user?.profile_img || "https://cdn-icons-png.flaticon.com/512/149/149071.png"} 
                     alt="User" 
                     className="w-full h-full rounded-full object-cover"
-                   />
-                </div>
-              ) : (
-                <div className="flex items-center gap-4">
-                  <span className="text-sm font-bold text-main italic">Welcome, {user?.user_name || 'Student'}</span>
-                  {user?.role?.type === 'admin' ? (
-                    <Link to="/admin" className="px-4 py-2 rounded-xl bg-gray-100 text-main hover:bg-gray-200 text-xs font-bold transition flex items-center gap-1">
-                      <MdDashboard /> Admin
-                    </Link>
-                  ) : (
-                    <Link to="/user/dashboard" className="px-4 py-2 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-100 text-xs font-bold transition flex items-center gap-1">
-                      <MdDashboard /> My Dashboard
-                    </Link>
-                  )}
-                  <button 
-                    onClick={() => setIsLogoutModalOpen(true)}
-                    className="p-2 rounded-full text-red-500 hover:bg-red-50 transition flex items-center justify-center"
-                    title="Logout"
-                  >
-                    <MdLogout size={20} />
-                  </button>
-                </div>
-              )
+                  />
+                </Menu.Button>
+
+                <Transition
+                  as={Fragment}
+                  enter="transition ease-out duration-100"
+                  enterFrom="transform opacity-0 scale-95"
+                  enterTo="transform opacity-100 scale-100"
+                  leave="transition ease-in duration-75"
+                  leaveFrom="transform opacity-100 scale-100"
+                  leaveTo="transform opacity-0 scale-95"
+                >
+                  <Menu.Items className="absolute right-0 mt-2 w-72 origin-top-right divide-y divide-gray-100 dark:divide-gray-800 rounded-2xl bg-white dark:bg-gray-900 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 focus:outline-none overflow-hidden z-[110]">
+                    {/* User Profile Header in Dropdown */}
+                    <div className="px-5 py-4 bg-gray-50/50 dark:bg-gray-800/50 flex items-center justify-between">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-1">Student Profile</p>
+                        <p className="text-sm font-black text-main dark:text-white italic truncate">{user?.user_name || "Nexus Student"}</p>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
+                      </div>
+                      <Link 
+                        to="/user/profile" 
+                        className="p-2 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 text-primary hover:bg-primary hover:text-white transition-all active:scale-90"
+                        title="Edit Profile"
+                      >
+                         <MdEdit size={16} />
+                      </Link>
+                    </div>
+
+                    <div className="p-2">
+                      {menuItems.map((item) => (
+                        <Menu.Item key={item.name}>
+                          {({ active }) => (
+                            <Link
+                              to={item.path}
+                              className={clsx(
+                                "flex items-center justify-between px-3 py-2.5 rounded-xl transition-all",
+                                active ? "bg-primary/5 dark:bg-primary/10 text-primary" : "text-gray-600 dark:text-gray-400"
+                              )}
+                            >
+                              <div className="flex items-center gap-3">
+                                <item.icon className={clsx("w-5 h-5", active ? "text-primary" : "text-gray-400")} />
+                                <span className={clsx("text-xs font-bold uppercase italic tracking-tight", item.color)}>
+                                  {item.name}
+                                </span>
+                              </div>
+                              {item.badge && (
+                                <span className={clsx("text-[8px] px-1.5 py-0.5 rounded text-white font-black uppercase italic", item.badgeColor)}>
+                                  {item.badge}
+                                </span>
+                              )}
+                            </Link>
+                          )}
+                        </Menu.Item>
+                      ))}
+                    </div>
+
+                    <div className="p-2">
+                       <Menu.Item>
+                        {({ active }) => (
+                          <button
+                            onClick={() => setIsLogoutModalOpen(true)}
+                            className={clsx(
+                              "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all",
+                              active ? "bg-red-50 text-red-600" : "text-gray-600"
+                            )}
+                          >
+                            <MdLogout className={clsx("w-5 h-5", active ? "text-red-600" : "text-gray-400")} />
+                            <span className="text-xs font-bold uppercase italic tracking-tight">Logout</span>
+                          </button>
+                        )}
+                      </Menu.Item>
+                    </div>
+                  </Menu.Items>
+                </Transition>
+              </Menu>
             ) : (
               <>
                 <button 
@@ -125,7 +204,7 @@ const Header = ({ hideNavbar = false }) => {
         className="lg:hidden bg-white overflow-hidden border-b border-gray-100"
       >
         <div className="px-4 py-6 flex flex-col gap-4">
-          {!hideNavbar && <Navbar isMobile onItemClick={() => setIsMobileMenuOpen(false)} />}
+          {!hideNavbar && !isAuthenticated && <Navbar isMobile onItemClick={() => setIsMobileMenuOpen(false)} />}
           <div className="grid grid-cols-2 gap-3 pt-4 border-t border-gray-50">
             {isAuthenticated ? (
                <button onClick={() => { setIsLogoutModalOpen(true); setIsMobileMenuOpen(false); }} className="col-span-2 flex items-center justify-center gap-2 py-3 bg-red-50 text-red-600 rounded-xl text-sm font-bold">

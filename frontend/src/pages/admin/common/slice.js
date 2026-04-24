@@ -6,6 +6,7 @@ const initialState = {
   refreshToken: null,
   rolePermissionsMap: [],
   fullScreenLoader: false,
+  darkMode: false,
 };
 
 const commonSlice = createSlice({
@@ -27,6 +28,9 @@ const commonSlice = createSlice({
     setFullScreenLoader(state, action) {
       state.fullScreenLoader = action.payload;
     },
+    toggleDarkMode(state) {
+      state.darkMode = !state.darkMode;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(logoutApp, () => {
@@ -44,6 +48,7 @@ export const {
   setRefreshToken,
   setRolePermissionsMap,
   setFullScreenLoader,
+  toggleDarkMode,
 } = commonSlice.actions;
 
 // Other Actions

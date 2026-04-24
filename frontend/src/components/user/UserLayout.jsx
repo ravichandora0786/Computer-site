@@ -4,10 +4,14 @@ import Footer from "./Footer";
 import AuthModals from "./AuthModals";
 import { motion, AnimatePresence } from "framer-motion";
 
+import { useSelector } from "react-redux";
+
 const UserLayout = ({ children }) => {
+  const { isAuthenticated } = useSelector((state) => state.userAuth);
+
   return (
-    <div className="min-h-screen bg-white selection:bg-primary/20">
-      <Header />
+    <div className="min-h-screen bg-page selection:bg-primary/20 transition-colors duration-300">
+      <Header hideNavbar={isAuthenticated} />
       <motion.main
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}

@@ -29,9 +29,15 @@ export const authenticateUser = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "super_secret");
+    if (req.url.includes('progress')) {
+      console.log(`[AUTH TRACE] Authenticating request to ${req.url}. User ID from token:`, decoded.id);
+    }
     req.user = decoded;
     next();
   } catch (err) {
+    if (req.url.includes('progress')) {
+      console.error(`[AUTH TRACE] AUTHENTICATION FAILED for ${req.url}:`, err.message);
+    }
     return next(new ApiError(401, err.message || "Invalid or expired token"));
   }
 };

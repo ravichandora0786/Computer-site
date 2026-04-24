@@ -268,19 +268,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Floating Support Icon */}
-      <motion.button 
-        whileHover={{ scale: 1.1, rotate: 5 }}
-        whileTap={{ scale: 0.9 }}
-        className="fixed bottom-8 right-8 z-50 h-20 w-20 rounded-[2rem] bg-primary text-white shadow-[0_20px_50px_rgba(255,71,0,0.4)] flex items-center justify-center group"
-      >
-        <MdSupportAgent size={40} className="group-hover:animate-bounce" />
-        <div className="absolute right-full mr-5 opacity-0 group-hover:opacity-100 transition-all pointer-events-none whitespace-nowrap hidden lg:block">
-          <div className="bg-white text-main font-black italic px-6 py-3 rounded-2xl shadow-xl border border-gray-100 text-sm">
-            Need Expert Support?
-          </div>
-        </div>
-      </motion.button>
     </div>
   );
 };

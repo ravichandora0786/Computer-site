@@ -1,18 +1,21 @@
 import React, { useState, useEffect } from 'react'
+import { useSelector, useDispatch } from 'react-redux'
 import AdminSidebar from './Sidebar'
+import { toggleDarkMode } from '../../pages/admin/common/slice'
 import { MdNotifications, MdSearch, MdPerson, MdLightMode, MdDarkMode, MdMenu } from 'react-icons/md'
 
 const AdminLayout = ({ children }) => {
+  const dispatch = useDispatch()
+  const { darkMode } = useSelector((state) => state.common)
   const [collapsed, setCollapsed] = useState(false)
   const [toggled, setToggled] = useState(false)
-  const [darkMode, setDarkMode] = useState(false)
 
-  // Apply dark class to body for theme variables to switch
+  // Apply dark class to document.documentElement
   useEffect(() => {
     if (darkMode) {
-      document.body.classList.add('dark')
+      document.documentElement.classList.add('dark')
     } else {
-      document.body.classList.remove('dark')
+      document.documentElement.classList.remove('dark')
     }
   }, [darkMode])
 
@@ -52,7 +55,7 @@ const AdminLayout = ({ children }) => {
           <div className="flex items-center space-x-2">
             {/* Theme Toggle Button */}
             <button
-              onClick={() => setDarkMode(!darkMode)}
+              onClick={() => dispatch(toggleDarkMode())}
               className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors"
               title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
             >

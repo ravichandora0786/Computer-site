@@ -26,9 +26,11 @@ import { courseRatingSagas } from '../pages/admin/courseRating/saga';
 import { platformRatingSagas } from '../pages/admin/platformRating/saga';
 
 import { userAuthSaga } from '../pages/user/auth/saga';
+import profileSaga from '../pages/user/profile/saga';
 
 function* rootSaga() {
   yield spawn(userAuthSaga);
+  yield spawn(profileSaga);
   yield spawn(commonSagas);
   yield spawn(courseSagas);
   yield spawn(courseContentSagas);
