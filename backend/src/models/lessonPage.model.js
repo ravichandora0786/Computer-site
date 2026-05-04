@@ -31,7 +31,7 @@ const LessonPageModel = sequelize.define(
       defaultValue: false,
     },
     required_time: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.FLOAT,
       defaultValue: 0,
       allowNull: false,
       comment: 'Mandatory stay duration in minutes'

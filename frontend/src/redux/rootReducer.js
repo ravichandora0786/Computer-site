@@ -24,13 +24,16 @@ import adminAboutSectionReducer from '../pages/admin/aboutSection/slice';
 import adminPrivacyPolicyReducer from '../pages/admin/privacyPolicy/slice';
 import adminCourseRatingReducer from '../pages/admin/courseRating/slice';
 import adminPlatformRatingReducer from '../pages/admin/platformRating/slice';
+import adminCertificateReducer from '../pages/admin/certificate/slice';
 
 import userAuthReducer from '../pages/user/auth/slice';
 import profileReducer from '../pages/user/profile/slice';
+import userCertificateReducer from '../pages/user/certificates/slice';
 
 const rootReducer = combineReducers({
   userAuth: userAuthReducer,
   profileData: profileReducer,
+  userCertificate: userCertificateReducer,
   common: commonReducer,
   courseData: courseReducer,
   courseContent: courseContentReducer,
@@ -44,6 +47,7 @@ const rootReducer = combineReducers({
   adminPrivacyPolicy: adminPrivacyPolicyReducer,
   adminCourseRating: adminCourseRatingReducer,
   adminPlatformRating: adminPlatformRatingReducer,
+  adminCertificate: adminCertificateReducer,
   
   // Public
   home: homeReducer,

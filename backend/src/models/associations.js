@@ -20,6 +20,7 @@ import LessonProgressModel from './lessonProgress.model.js'
 import TestAttemptModel from './testAttempt.model.js'
 import TestAttemptAnswerModel from './testAttemptAnswer.model.js'
 import OfflineBatchModel from './offlineBatch.model.js'
+import CertificateModel from './certificate.model.js'
 
 // New Models
 import PlatformRatingModel from './platformRating.model.js'
@@ -84,7 +85,7 @@ UserModel.hasMany(UserCourseModel, { foreignKey: 'user_id', as: 'enrolled_course
 UserCourseModel.belongsTo(UserModel, { foreignKey: 'user_id', as: 'user' })
 
 // Course - UserCourses
-CourseModel.hasMany(UserCourseModel, { foreignKey: 'course_id', as: 'user_courses' })
+CourseModel.hasMany(UserCourseModel, { foreignKey: 'course_id', as: 'user_courses', onDelete: 'CASCADE' })
 UserCourseModel.belongsTo(CourseModel, { foreignKey: 'course_id', as: 'course' })
 
 // Course - Media
@@ -143,6 +144,10 @@ CourseRatingModel.belongsTo(CourseModel, { foreignKey: 'course_id', as: 'course'
 LessonModel.hasMany(LessonProgressModel, { foreignKey: 'lesson_id', as: 'userProgress', onDelete: 'CASCADE' })
 LessonProgressModel.belongsTo(LessonModel, { foreignKey: 'lesson_id', as: 'lesson' })
 
+// Course - LessonProgress
+CourseModel.hasMany(LessonProgressModel, { foreignKey: 'course_id', as: 'all_progress', onDelete: 'CASCADE' })
+LessonProgressModel.belongsTo(CourseModel, { foreignKey: 'course_id', as: 'course_ref' })
+
 // User - CourseRating
 UserModel.hasMany(CourseRatingModel, { foreignKey: 'user_id', as: 'course_ratings' })
 CourseRatingModel.belongsTo(UserModel, { foreignKey: 'user_id', as: 'user' })
@@ -150,6 +155,12 @@ CourseRatingModel.belongsTo(UserModel, { foreignKey: 'user_id', as: 'user' })
 // PrivacyPolicy - User (Updated by)
 UserModel.hasMany(PrivacyPolicyModel, { foreignKey: 'updated_by', as: 'updated_policies' })
 PrivacyPolicyModel.belongsTo(UserModel, { foreignKey: 'updated_by', as: 'admin' })
+
+// Certificate Associations
+UserModel.hasMany(CertificateModel, { foreignKey: 'userId', as: 'certificates' })
+CertificateModel.belongsTo(UserModel, { foreignKey: 'userId', as: 'user' })
+CourseModel.hasMany(CertificateModel, { foreignKey: 'courseId', as: 'certificates', onDelete: 'CASCADE' })
+CertificateModel.belongsTo(CourseModel, { foreignKey: 'courseId', as: 'course' })
 
 export {
   UserModel,
@@ -184,4 +195,5 @@ export {
   FAQModel,
   PrivacyPolicyModel,
   AboutSectionModel,
+  CertificateModel,
 }

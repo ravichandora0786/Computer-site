@@ -25,6 +25,7 @@ import PlatformRatingList from "./pages/admin/platformRating/PlatformRatingList"
 import CourseList from './pages/admin/course/CourseList'
 import AddUpdateCourse from './pages/admin/course/AddUpdateCourse'
 import ViewCourse from './pages/admin/course/ViewCourse'
+import CertificateRequests from './pages/admin/certificate/CertificateRequests'
 import CourseContentManager from './pages/admin/course/CourseContentManager'
 import GalleryList from './pages/admin/gallery/GalleryList'
 import UserList from './pages/admin/user/UserList'
@@ -38,6 +39,7 @@ import PrivateRoute from './routes/PrivateRoute'
 import DashboardLayout from './components/user/DashboardLayout'
 import UserDashboard from './pages/user/dashboard/UserDashboard'
 import ProfileSettings from './pages/user/profile/ProfileSettings'
+import ClaimCertificate from './pages/user/certificates/ClaimCertificate'
 import { UserPrivateRoute, PublicOnlyRoute } from './routes/UserRoutes'
 import FloatingActions from './components/user/FloatingActions'
 
@@ -110,6 +112,7 @@ function App() {
 
                 <Route path="course-ratings" element={<CourseRatingList />} />
                 <Route path="platform-ratings" element={<PlatformRatingList />} />
+                <Route path="certificates" element={<CertificateRequests />} />
               </Routes>
             </AdminLayout>
           </PrivateRoute>
@@ -130,6 +133,7 @@ function App() {
                     <Route path="dashboard" element={<UserDashboard />} />
                     <Route path="courses" element={<CoursesPage />} />
                     <Route path="my-courses" element={<CoursesPage />} />
+                    <Route path="certificates" element={<ClaimCertificate />} />
                   </Routes>
                 </DashboardLayout>
               } />

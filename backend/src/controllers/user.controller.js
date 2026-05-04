@@ -119,26 +119,29 @@ const deleteUser = asyncHandler(async (req, res, next) => {
   }
 })
 
-/** Get user options for dropdowns (Filtered for Teachers) */
+/** Get user options for dropdowns */
 const getUserOptions = asyncHandler(async (req, res, next) => {
+  const { user_type } = req.query
+  
   const users = await UserModel.findAll({
+    where: { account_status: 'active' },
     include: [{
       model: RoleModel,
-      as: 'role',
-      where: { type: 'teacher' },
-      attributes: []
+      as: 'role'
     }],
-    attributes: ['id', 'user_name']
+    attributes: ['id', 'user_name', 'email', 'father_name']
   })
-  
-  const options = users.map(user => ({
-    label: user.user_name,
-    value: user.id
-  }))
+
+  let filteredUsers = users
+  if (user_type) {
+    filteredUsers = users.filter(u => 
+      u.role?.type?.toLowerCase() === user_type.toLowerCase()
+    )
+  }
 
   return res
     .status(200)
-    .json(new ApiResponse(200, options, 'Teacher options fetched'))
+    .json(new ApiResponse(200, filteredUsers, 'User options fetched'))
 })
 
 /** Get dashboard stats for current user */
@@ -186,6 +189,8 @@ const getDashboardStats = asyncHandler(async (req, res, next) => {
     courseId: ec.courseId,
     title: ec.course?.title,
     progress: ec.progress,
+    access_type: ec.course?.access_type,
+    course_mode: ec.course?.course_mode,
     thumbnail: ec.course?.media?.find(m => m.media_type === 'image')?.url,
     timeRemaining: ec.status === 'completed' ? 'Completed' : 'In Progress',
     updatedAt: ec.updatedAt

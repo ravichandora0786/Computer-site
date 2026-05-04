@@ -27,7 +27,7 @@ const LessonModel = sequelize.define(
       defaultValue: 0,
     },
     duration_min: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.FLOAT,
       defaultValue: 0,
     },
     is_preview: {

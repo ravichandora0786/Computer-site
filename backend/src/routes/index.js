@@ -24,6 +24,7 @@ import privacyPolicyRouter from './privacyPolicyRouter.js'
 import courseRatingRouter from './courseRatingRouter.js'
 import platformRatingRouter from './platformRatingRouter.js'
 import lessonProgressRouter from './lessonProgressRouter.js'
+import certificateRouter from './certificateRouter.js'
 
 const router = express.Router()
 
@@ -58,5 +59,6 @@ router.use('/privacy-policies', privacyPolicyRouter)
 router.use('/course-ratings', courseRatingRouter)
 router.use('/platform-ratings', platformRatingRouter)
 router.use('/lesson-progress', lessonProgressRouter)
+router.use('/certificates', certificateRouter)
 
 export default router

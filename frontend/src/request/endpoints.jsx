@@ -133,6 +133,13 @@ const endPoints = {
   // Ratings
   CourseRatings: "/course-ratings",
   PlatformRatings: "/platform-ratings",
+  
+  // Certificates
+  UserCertificates: "/certificates/user-list",
+  AllCertificates: "/certificates/all",
+  ApplyCertificate: "/certificates/apply",
+  ApproveCertificate: "/certificates/approve",
+  GenerateCertificate: "/certificates/generate",
 }
 
 export default endPoints;

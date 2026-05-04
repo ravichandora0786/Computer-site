@@ -40,10 +40,6 @@ const CourseModel = sequelize.define(
       type: DataTypes.ENUM(...ACCESS_TYPE_ENUM),
       defaultValue: 'Free',
     },
-    duration_month: {
-      type: DataTypes.INTEGER,
-      defaultValue: 0,
-    },
     monthly_amount: {
       type: DataTypes.DECIMAL(10, 2),
       defaultValue: 0,

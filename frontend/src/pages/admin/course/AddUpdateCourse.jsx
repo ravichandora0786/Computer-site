@@ -33,7 +33,6 @@ const AddUpdateCourse = () => {
     expire_date: "",
     course_mode: "Online",
     access_type: "Free",
-    duration_month: 0,
     monthly_amount: 0,
     yearly_amount: 0,
     fixed_amount: 0,
@@ -64,7 +63,6 @@ const AddUpdateCourse = () => {
         expire_date: "",
         course_mode: "Online",
         access_type: "Free",
-        duration_month: 0,
         monthly_amount: 0,
         yearly_amount: 0,
         fixed_amount: 0,
@@ -80,10 +78,11 @@ const AddUpdateCourse = () => {
     try {
       const [catRes, teachRes] = await Promise.all([
         httpRequest.get(endPoints.CourseCategoryOptions),
-        httpRequest.get(endPoints.UserOptions),
+        httpRequest.get(endPoints.UserOptions + '?user_type=teacher'),
       ]);
       setCategories(catRes?.data || []);
-      setTeachers(teachRes?.data || []);
+      const teacherOptions = (teachRes?.data || []).map(t => ({ label: t.user_name, value: t.id }));
+      setTeachers(teacherOptions);
     } catch (error) {
       console.error("Failed to fetch metadata", error);
     }
@@ -107,7 +106,6 @@ const AddUpdateCourse = () => {
           expire_date: data.expire_date || "",
           course_mode: data.course_mode || "Online",
           access_type: data.access_type || "Free",
-          duration_month: data.duration_month || 0,
           monthly_amount: data.monthly_amount || 0,
           yearly_amount: data.yearly_amount || 0,
           fixed_amount: data.fixed_amount || 0,
@@ -127,10 +125,18 @@ const AddUpdateCourse = () => {
     course_category_id: Yup.string().required("Category is required"),
     author: Yup.string().required("Author is required"),
     course_level: Yup.string().required("Level is required"),
-    publish_date: Yup.string().required("Publish date is required"),
-    duration_month: Yup.number().min(0, "Duration must be positive"),
-    access_type: Yup.string().required("Access type is required"),
     course_mode: Yup.string().required("Course mode is required"),
+    publish_date: Yup.string().when("course_mode", {
+      is: "Offline",
+      then: (schema) => schema.required("Launch date is required for offline courses"),
+      otherwise: (schema) => schema.nullable(),
+    }),
+    expire_date: Yup.string().when("course_mode", {
+      is: "Offline",
+      then: (schema) => schema.required("Archiving date is required for offline courses"),
+      otherwise: (schema) => schema.nullable(),
+    }),
+    access_type: Yup.string().required("Access type is required"),
     monthly_amount: Yup.number().min(0, "Amount must be positive"),
     yearly_amount: Yup.number().min(0, "Amount must be positive"),
     fixed_amount: Yup.number().min(0, "Amount must be positive"),
@@ -170,8 +176,6 @@ const AddUpdateCourse = () => {
       placeholder: "Select level",
       required: true
     },
-    { name: "publish_date", label: "Launch Date", type: "date", required: true },
-    { name: "expire_date", label: "Archiving Date", type: "date" },
     {
       name: "status",
       label: "Lifecycle Status",
@@ -204,7 +208,8 @@ const AddUpdateCourse = () => {
       ],
       required: true
     },
-    { name: "duration_month", label: "Course Duration (Months)", type: "number", placeholder: "0" },
+    { name: "publish_date", label: "Launch Date", type: "date" },
+    { name: "expire_date", label: "Archiving Date", type: "date" },
     { name: "monthly_amount", label: "Monthly Subs ($)", type: "number", placeholder: "0.00" },
     { name: "yearly_amount", label: "Yearly Subs ($)", type: "number", placeholder: "0.00" },
     { name: "fixed_amount", label: "One-time Purchase ($)", type: "number", placeholder: "0.00" },
@@ -233,13 +238,18 @@ const AddUpdateCourse = () => {
 
   const generalFields = useMemo(() => fields.slice(0, 9), [fields]);
   
-  const getPricingFields = (accessType) => {
-    const pFields = fields.slice(9);
+  const getPricingFields = (accessType, courseMode) => {
+    const pFields = fields.slice(9); // Starts from publish_date
+    
+    // Dates are always relevant for the timeline section, but only mandatory if Offline
+    const dateFields = courseMode === 'Offline' ? [pFields[0], pFields[1]] : [];
+    
     if (accessType === 'Free') {
-      // Show Access Type, Course Mode, and Duration for Free courses
-      return [pFields[0], pFields[1], pFields[2]];
+      return [...dateFields];
     }
-    return pFields;
+    
+    // For Paid, add amounts
+    return [...dateFields, ...pFields.slice(2)];
   };
 
   const handleSubmit = async (values, { setSubmitting }) => {
@@ -409,7 +419,7 @@ const AddUpdateCourse = () => {
 
               {activeTab === "pricing" && (
                 <RenderFields
-                  fields={getPricingFields(values.access_type)}
+                  fields={getPricingFields(values.access_type, values.course_mode)}
                   setFieldValue={setFieldValue}
                   values={values}
                   errors={errors}

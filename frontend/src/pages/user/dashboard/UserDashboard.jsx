@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
@@ -8,10 +8,14 @@ import {
 } from "react-icons/md";
 import { httpRequest, endPoints } from "../../../request";
 import clsx from "clsx";
+import CourseSlider from "@/components/user/CourseSlider";
+import { fetchCourses } from "@/pages/user/courses/slice";
 
 const UserDashboard = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { user, dashboardStats } = useSelector((state) => state.userAuth);
+  const { items: allCourses } = useSelector((state) => state.courses);
   const stats = dashboardStats;
 
   const statCards = [
@@ -24,6 +28,10 @@ const UserDashboard = () => {
   const inProgressCourses = stats?.enrolledCourses || [];
   const profileCompletion = stats?.profileCompletion || 0;
   const apiBase = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || "http://localhost:5000";
+
+  useEffect(() => {
+    dispatch(fetchCourses());
+  }, [dispatch]);
 
   if (!stats) {
     return <div className="flex items-center justify-center min-h-[400px]">
@@ -66,7 +74,7 @@ const UserDashboard = () => {
           {/* Courses In Progress */}
           <section className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
             <div className="p-4 border-b border-gray-50 dark:border-gray-700 flex justify-between items-center">
-               <h2 className="font-bold text-gray-800 dark:text-white">Enrolled Courses ({inProgressCourses.length})</h2>
+               <h2 className="font-bold text-gray-800 dark:text-white uppercase tracking-tight">Start Learning ({inProgressCourses.length})</h2>
                <button 
                  onClick={() => navigate("/user/my-courses")}
                  className="text-gray-400 hover:text-primary"
@@ -186,6 +194,29 @@ const UserDashboard = () => {
            </div>
         </div>
       </div>
+
+      {/* Recommended Courses Section */}
+      <section className="mt-16">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-20 uppercase italic">
+          <div>
+            <h2 className="text-[10px] font-black text-primary uppercase tracking-[0.5em] mb-4 font-bold">Mastery Library</h2>
+            <h3 className="text-3xl md:text-5xl font-black text-gray-800 dark:text-white tracking-tighter italic">Recommended For You</h3>
+          </div>
+          <div className="flex items-center gap-12">
+            <button 
+              onClick={() => navigate("/user/courses")}
+              className="group flex items-center gap-4 text-xs font-black tracking-[0.2em] border-b-2 border-gray-800 dark:border-white pb-2 hover:text-primary hover:border-primary transition-all text-gray-800 dark:text-white uppercase italic whitespace-nowrap"
+            >
+              View All Courses <MdChevronRight size={22} className="group-hover:translate-x-2 transition-transform" />
+            </button>
+            {/* Spacer to make room for slider navigation buttons which are absolute positioned */}
+            <div className="hidden md:block w-24"></div>
+          </div>
+        </div>
+        <div className="relative">
+          <CourseSlider courses={allCourses} />
+        </div>
+      </section>
     </div>
   );
 };

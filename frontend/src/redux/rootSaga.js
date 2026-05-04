@@ -24,13 +24,16 @@ import { aboutSectionSagas } from '../pages/admin/aboutSection/saga';
 import { privacyPolicySagas } from '../pages/admin/privacyPolicy/saga';
 import { courseRatingSagas } from '../pages/admin/courseRating/saga';
 import { platformRatingSagas } from '../pages/admin/platformRating/saga';
+import certificateSagas from '../pages/admin/certificate/sagas';
 
 import { userAuthSaga } from '../pages/user/auth/saga';
 import profileSaga from '../pages/user/profile/saga';
+import userCertificateSagas from '../pages/user/certificates/sagas';
 
 function* rootSaga() {
   yield spawn(userAuthSaga);
   yield spawn(profileSaga);
+  yield spawn(userCertificateSagas);
   yield spawn(commonSagas);
   yield spawn(courseSagas);
   yield spawn(courseContentSagas);
@@ -44,6 +47,7 @@ function* rootSaga() {
   yield spawn(privacyPolicySagas);
   yield spawn(courseRatingSagas);
   yield spawn(platformRatingSagas);
+  yield spawn(certificateSagas);
 
   // Public
   yield spawn(homeSaga);

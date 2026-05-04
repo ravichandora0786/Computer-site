@@ -44,6 +44,13 @@ import { httpRequest } from "@/request";
 import endPoints from "@/request/endpoints";
 
 // --- Sub-components (Simplified to use modal handlers) ---
+const formatDuration = (mins) => {
+  const m = parseFloat(mins || 0);
+  if (m < 1 && m > 0) {
+    return `${Math.round(m * 60)} SECS`;
+  }
+  return `${Number(m.toFixed(1))} MINS`;
+};
 
 const PageItem = ({ page, lessonId, onEdit, onDelete, onDragEnd }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -65,6 +72,7 @@ const PageItem = ({ page, lessonId, onEdit, onDelete, onDragEnd }) => {
         <div className="flex-1 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
           <div className="flex items-center gap-2">
             <h5 className="text-sm font-bold text-main">{page.title}</h5>
+            <span className="text-[8px] font-bold bg-gray-50 text-muted px-1.5 border border-gray-100 rounded-full uppercase">{formatDuration(page.required_time)}</span>
             <span className={`text-[8px] font-bold px-1.5 py-0.5 border rounded uppercase tracking-wider ${page.status === 'published'
               ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
               : 'bg-amber-50 text-amber-600 border-amber-100'
@@ -137,7 +145,7 @@ const LessonItem = ({ lesson, moduleId, onEdit, onDelete, onAddPage, onEditPage,
           <div className="flex items-center gap-2">
             <h4 className="text-sm font-bold text-main">{lesson.title}</h4>
             <div className="flex gap-1">
-              <span className="text-[8px] font-bold bg-gray-50 text-muted px-1.5 border border-gray-100 rounded-full uppercase">{lesson.duration_min || 0} MINS</span>
+              <span className="text-[8px] font-bold bg-gray-50 text-muted px-1.5 border border-gray-100 rounded-full uppercase">{formatDuration(lesson.duration_min)}</span>
             </div>
           </div>
           <div className="flex items-center gap-2 mt-0.5">
@@ -262,6 +270,11 @@ const ModuleItem = ({
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-primary uppercase tracking-tighter">Module {index + 1}</span>
             <h3 className="font-bold text-lg text-main">{module.title}</h3>
+            {module.lessons?.length > 0 && (
+              <span className="text-[10px] font-bold bg-primary/5 text-primary px-2 py-0.5 border border-primary/10 rounded-full uppercase italic">
+                {formatDuration(module.lessons.reduce((acc, l) => acc + (l.duration_min || 0), 0))} TOTAL
+              </span>
+            )}
           </div>
           <p className="text-xs text-muted mt-1">{module.description}</p>
         </div>
@@ -373,7 +386,8 @@ const CourseContentManager = () => {
   const currentCourse = courseList.find(c => c.id === courseId) || { title: "Course Content" };
 
   const [expandedModules, setExpandedModules] = useState([]);
-  const [activeTab, setActiveTab] = useState("curriculum");
+  const isOffline = currentCourse.course_mode === "Offline";
+  const [activeTab, setActiveTab] = useState(isOffline ? "batches" : "curriculum");
   const [editingItem, setEditingItem] = useState(null);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -431,15 +445,19 @@ const CourseContentManager = () => {
             <button onClick={() => activeTab === "curriculum" ? handleOpenModuleModal() : handleOpenBatchModal()} className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border-line bg-white hover:bg-gray-50 transition-all font-semibold text-sm">
               <MdAdd size={20} /> New {activeTab === "curriculum" ? "Module" : "Batch"}
             </button>
-            <PrimaryButton name="Publish Changes" />
           </div>
         </div>
         <div className="flex border-t border-border-line bg-gray-50/50">
-          {["curriculum", "batches"].map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)} className={clsx("px-8 py-3 text-xs font-bold uppercase tracking-widest transition-all border-b-2", activeTab === tab ? "border-primary text-primary bg-white" : "border-transparent text-muted")}>
-              {tab === "curriculum" ? "Online Curriculum" : "Offline Batches"}
+          {!isOffline && (
+            <button onClick={() => setActiveTab("curriculum")} className={clsx("px-8 py-3 text-xs font-bold uppercase tracking-widest transition-all border-b-2", activeTab === "curriculum" ? "border-primary text-primary bg-white" : "border-transparent text-muted")}>
+              Online Curriculum
             </button>
-          ))}
+          )}
+          {isOffline && (
+            <button onClick={() => setActiveTab("batches")} className={clsx("px-8 py-3 text-xs font-bold uppercase tracking-widest transition-all border-b-2", activeTab === "batches" ? "border-primary text-primary bg-white" : "border-transparent text-muted")}>
+              Offline Batches
+            </button>
+          )}
         </div>
       </div>
 
@@ -478,9 +496,23 @@ const CourseContentManager = () => {
         </div>
       )}
 
-      <ModuleModal isOpen={isModuleModalOpen} onClose={() => setIsModuleModalOpen(false)} onSuccess={fetchData} editingItem={editingItem} courseId={courseId} initialOrder={modules.length} />
-      <LessonModal isOpen={isLessonModalOpen} onClose={() => setIsLessonModalOpen(false)} onSuccess={fetchData} editingItem={editingItem} moduleId={contextIds.moduleId} />
-      <LessonPageModal isOpen={isPageModalOpen} onClose={() => setIsPageModalOpen(false)} onSuccess={fetchData} editingItem={editingItem} lessonId={contextIds.lessonId} />
+      <ModuleModal isOpen={isModuleModalOpen} onClose={() => setIsModuleModalOpen(false)} onSuccess={fetchData} editingItem={editingItem} courseId={courseId} initialOrder={modules.length + 1} />
+      <LessonModal 
+        isOpen={isLessonModalOpen} 
+        onClose={() => setIsLessonModalOpen(false)} 
+        onSuccess={fetchData} 
+        editingItem={editingItem} 
+        moduleId={contextIds.moduleId} 
+        initialOrder={(modules.find(m => m.id === contextIds.moduleId)?.lessons?.length || 0) + 1}
+      />
+      <LessonPageModal 
+        isOpen={isPageModalOpen} 
+        onClose={() => setIsPageModalOpen(false)} 
+        onSuccess={fetchData} 
+        editingItem={editingItem} 
+        lessonId={contextIds.lessonId} 
+        initialOrder={(modules.flatMap(m => m.lessons || []).find(l => l.id === contextIds.lessonId)?.pages?.length || 0) + 1}
+      />
       <TestModal isOpen={isTestModalOpen} onClose={() => setIsTestModalOpen(false)} onSuccess={fetchData} editingItem={editingItem} moduleId={contextIds.moduleId} />
       <QuestionModal isOpen={isQuestionModalOpen} onClose={() => setIsQuestionModalOpen(false)} onSuccess={fetchData} editingItem={editingItem} testId={contextIds.testId} />
       <BatchModal isOpen={isBatchModalOpen} onClose={() => setIsBatchModalOpen(false)} onSuccess={fetchData} editingItem={editingItem} courseId={courseId} />

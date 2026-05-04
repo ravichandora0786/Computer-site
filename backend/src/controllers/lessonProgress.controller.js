@@ -109,7 +109,7 @@ export const updatePageProgress = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Page not found")
   }
 
-  const requiredSeconds = (page.required_time || 0)
+  const requiredMinutes = (page.required_time || 0)
 
   // 2. Fetch or Create Lesson Progress (The central record)
   let lessonProgress = await LessonProgressModel.findOne({
@@ -147,11 +147,12 @@ export const updatePageProgress = asyncHandler(async (req, res) => {
   console.log('Current pages_data:', pagesData);
   const currentPageData = pagesData[pageId] || { time_spent: 0, is_completed: false };
 
-  const newTime = currentPageData.time_spent + (secondsIncrement || 0)
-  const isNowCompleted = newTime >= requiredSeconds;
+  const incrementInMinutes = (secondsIncrement || 0) / 60
+  const newTimeMinutes = (currentPageData.time_spent || 0) + incrementInMinutes
+  const isNowCompleted = newTimeMinutes >= requiredMinutes;
 
   pagesData[pageId] = {
-    time_spent: newTime,
+    time_spent: Number(newTimeMinutes.toFixed(4)),
     is_completed: currentPageData.is_completed || isNowCompleted,
     completed_at: (isNowCompleted && !currentPageData.is_completed) ? new Date() : currentPageData.completed_at
   };

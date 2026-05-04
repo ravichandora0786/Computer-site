@@ -7,27 +7,26 @@ import LoadingButton from "@/components/ui/LoadingButton";
 import RenderFields from "@/components/ui/renderFields";
 import { createLessonAction, updateLessonAction } from "../courseContentSlice";
 
-const LessonModal = ({ isOpen, onClose, onSuccess, editingItem, moduleId }) => {
+const LessonModal = ({ isOpen, onClose, onSuccess, editingItem, moduleId, initialOrder }) => {
   const dispatch = useDispatch();
 
   const validationSchema = Yup.object().shape({
     title: Yup.string().required("Lesson title is required"),
     short_description: Yup.string().optional(),
-    duration_min: Yup.number().typeError("Must be a number").min(0, "Cannot be negative"),
+    lesson_order: Yup.number().min(0, "Order must be at least 0"),
   });
 
   const initialValues = {
     title: editingItem?.title || "",
     short_description: editingItem?.short_description || "",
-    lesson_order: editingItem?.lesson_order || 0,
-    duration_min: editingItem?.duration_min || 0,
+    lesson_order: editingItem?.lesson_order !== undefined ? editingItem.lesson_order : (initialOrder || 0),
     is_preview: editingItem?.is_preview || false
   };
 
   const fields = [
     { name: "title", label: "Lesson Title", type: "text", placeholder: "e.g. Master the Portfolio", fullWidth: true, required: true },
     { name: "short_description", label: "Short Description", type: "textarea", placeholder: "Brief summary...", fullWidth: true },
-    { name: "duration_min", label: "Duration (Mins)", type: "number", placeholder: "Length in minutes", required: true },
+    { name: "lesson_order", label: "Lesson Order", type: "number", placeholder: "Display sequence index" },
   ];
 
   const handleSubmit = (values, { setSubmitting }) => {

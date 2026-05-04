@@ -51,7 +51,7 @@ const AuthModals = () => {
     <>
       {/* Login Modal */}
       <Transition appear show={isLoginModalOpen} as={Fragment}>
-        <Dialog as="div" className="relative z-[999]" onClose={() => dispatch(closeLoginModal())}>
+        <Dialog as="div" className="relative z-[999]" onClose={() => {}}>
           <Transition.Child
             as={Fragment}
             enter="ease-out duration-300"
@@ -157,7 +157,7 @@ const AuthModals = () => {
 
       {/* Signup Modal */}
       <Transition appear show={isSignupModalOpen} as={Fragment}>
-        <Dialog as="div" className="relative z-[999]" onClose={() => dispatch(closeSignupModal())}>
+        <Dialog as="div" className="relative z-[999]" onClose={() => {}}>
           <Transition.Child
             as={Fragment}
             enter="ease-out duration-300"

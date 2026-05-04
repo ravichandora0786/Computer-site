@@ -38,7 +38,7 @@ const DashboardLayout = ({ children }) => {
           <motion.main
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex-1 p-4 lg:p-6 max-w-[1400px] mx-auto w-full"
+            className="flex-1 p-4 lg:p-6 max-w-auto mx-auto w-full"
           >
             {children}
           </motion.main>

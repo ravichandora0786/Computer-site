@@ -33,6 +33,7 @@ const CourseDetail = () => {
   const [completedPages, setCompletedPages] = useState({}); // { [lessonId]: Set([pageIds]) }
   const [isTabActive, setIsTabActive] = useState(true);
   const [totalPageSeconds, setTotalPageSeconds] = useState(0);
+  const unSyncedSecondsRef = React.useRef(0);
 
   // Monitor tab visibility to pause timer when inactive
   useEffect(() => {
@@ -120,25 +121,40 @@ const CourseDetail = () => {
     if (isTimerRunning && timerSeconds > 0 && isTabActive) {
       interval = setInterval(() => {
         setTimerSeconds((prev) => prev - 1);
+        unSyncedSecondsRef.current += 1;
+
+        // Auto-sync every 10 seconds
+        if (unSyncedSecondsRef.current >= 10) {
+          handlePageMastery(false, unSyncedSecondsRef.current);
+          unSyncedSecondsRef.current = 0;
+        }
       }, 1000);
     } else if (timerSeconds === 0 && isTimerRunning) {
       // PAGE MASTERED (FINAL SYNC)
       setIsTimerRunning(false);
-      handlePageMastery(true); // Final sync
+      handlePageMastery(true, unSyncedSecondsRef.current);
+      unSyncedSecondsRef.current = 0;
     }
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [isTimerRunning, timerSeconds, isTabActive]);
 
-  // HEARTBEAT EFFECT: Syncs time every 10 seconds to persistence
+  // Sync on unmount or refresh
   useEffect(() => {
-    let pulse = null;
-    if (isTimerRunning && timerSeconds > 0 && isTabActive) {
-      pulse = setInterval(() => {
-        handlePageMastery(false); // Periodic sync
-      }, 10000); // 10s Heartbeat
-    }
-    return () => clearInterval(pulse);
-  }, [isTimerRunning, isTabActive]);
+    const syncOnLeave = () => {
+      if (unSyncedSecondsRef.current > 0) {
+        handlePageMastery(false, unSyncedSecondsRef.current);
+        unSyncedSecondsRef.current = 0;
+      }
+    };
+
+    window.addEventListener("beforeunload", syncOnLeave);
+    return () => {
+      syncOnLeave();
+      window.removeEventListener("beforeunload", syncOnLeave);
+    };
+  }, [activePageByLesson]); // Re-bind if page changes to capture correct context
 
   const handlePageMastery = async (isFinal = false, forceSeconds = null, manualLesson = null, manualPageId = null) => {
     let activeLesson = manualLesson;
@@ -187,15 +203,21 @@ const CourseDetail = () => {
   };
 
   const startPageTimer = (lessonId, page) => {
+    // 1. Sync current progress before switching
+    if (unSyncedSecondsRef.current > 0) {
+      handlePageMastery(false, unSyncedSecondsRef.current);
+      unSyncedSecondsRef.current = 0;
+    }
+
     const isAlreadyDone = (completedPages[lessonId] || []).includes(page.id) || page.user_progress?.[0]?.is_completed;
     setActivePageByLesson(prev => ({ ...prev, [lessonId]: page.id }));
 
-    const requiredSeconds = (page.required_time || 0);
+    const requiredSeconds = (page.required_time || 0) * 60;
     setTotalPageSeconds(requiredSeconds);
 
     if (!isAlreadyDone) {
-      const spent = page.user_progress?.[0]?.time_spent || 0;
-      const remaining = Math.max(0, requiredSeconds - spent);
+      const spentInSeconds = (page.user_progress?.[0]?.time_spent || 0) * 60;
+      const remaining = Math.max(0, requiredSeconds - spentInSeconds);
 
       setTimerSeconds(remaining);
       setIsTimerRunning(remaining > 0);
@@ -313,7 +335,24 @@ const CourseDetail = () => {
                     </div>
                     <div>
                       <p className="text-[7px] font-black uppercase tracking-[0.2em] text-gray-500 mb-0.5 italic">Duration</p>
-                      <p className="text-base font-black text-white italic">{course.duration_month || "12"} Weeks</p>
+                      <p className="text-base font-black text-white italic">
+                        {(() => {
+                          if (course.course_mode === 'Offline') {
+                            if (course.publish_date && course.expire_date) {
+                              const start = new Date(course.publish_date);
+                              const end = new Date(course.expire_date);
+                              const diffWeeks = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24 * 7));
+                              return `${diffWeeks} Weeks`;
+                            }
+                            return "TBD";
+                          } else {
+                            const totalMin = parseFloat(course.total_duration_min || 0);
+                            if (totalMin < 1 && totalMin > 0) return `${Math.round(totalMin * 60)} Secs`;
+                            if (totalMin >= 60) return `${(totalMin / 60).toFixed(1)} Hrs`;
+                            return `${Number(totalMin.toFixed(1))} Mins`;
+                          }
+                        })()}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -516,7 +555,12 @@ const CourseDetail = () => {
                                                               )}
                                                             >
                                                           <div className={clsx("w-1.5 h-1.5 rounded-full", activePageId === page.id ? "bg-primary" : isPageDone ? "bg-green-500" : "bg-gray-200")} />
-                                                          <span className="text-[9px] font-black uppercase italic truncate leading-none">{page.title}</span>
+                                                          <div className="flex flex-col flex-1 overflow-hidden">
+                                                            <span className="text-[9px] font-black uppercase italic truncate leading-none mb-1">{page.title}</span>
+                                                            <span className="text-[7px] font-bold text-primary/60 uppercase tracking-tighter">
+                                                              {page.required_time < 1 ? `${Math.round(page.required_time * 60)}s` : `${page.required_time}m`} Read Time
+                                                            </span>
+                                                          </div>
                                                           {isPageDone && <MdCheckCircle size={14} className="text-green-500 ml-auto" />}
                                                         </button>
                                                       );
@@ -528,7 +572,7 @@ const CourseDetail = () => {
                                                       <div className="absolute top-6 right-6 flex items-center gap-3 bg-main px-4 py-2 rounded-xl shadow-xl z-20">
                                                         <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                                                         <span className="text-[10px] font-black text-white italic tracking-[0.2em] uppercase">
-                                                          Mastery Clock: {Math.floor(timerSeconds / 60)}:{String(timerSeconds % 60).padStart(2, '0')}
+                                                          Mastery Clock: {Math.floor(timerSeconds / 60)}:{String(Math.ceil(timerSeconds % 60)).padStart(2, '0')}
                                                         </span>
                                                       </div>
                                                     )}
@@ -550,7 +594,7 @@ const CourseDetail = () => {
                                                           const isPageDone = (completedPages[lesson.id] || []).includes(activePage?.id);
                                                           const spent = totalPageSeconds - timerSeconds;
                                                           const progress = totalPageSeconds > 0 ? (spent / totalPageSeconds) : 0;
-                                                          const canSkip = !isPageDone && progress >= 0.5;
+                                                          const canSkip = !isPageDone && progress >= 0.7;
                                                           const canProceed = isPageDone || progress >= 0.95;
 
                                                           return (
@@ -600,7 +644,7 @@ const CourseDetail = () => {
                                                       onClick={handleEnroll}
                                                       className="px-8 py-3 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] italic hover:bg-opacity-90 shadow-lg shadow-primary/10 transition-all active:scale-95"
                                                     >
-                                                      Enroll Now
+                                                      Start Learning
                                                     </button>
                                                   )}
                                                 </div>
@@ -713,7 +757,7 @@ const CourseDetail = () => {
                   </div>
 
                   <button onClick={handleEnroll} disabled={enrolling} className={clsx("w-full py-3.5 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] transition-all mb-4 italic flex items-center justify-center gap-2", isEnrolled ? "bg-green-500 text-white" : "bg-primary text-white", "hover:-translate-y-0.5 active:scale-95 disabled:opacity-70 shadow-lg shadow-primary/20")}>
-                    {enrolling ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : isEnrolled ? "Continue Training" : "Enroll Studio"}
+                    {enrolling ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : isEnrolled ? "Continue Training" : "Start Learning"}
                   </button>
 
                   <div className="space-y-3">

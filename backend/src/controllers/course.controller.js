@@ -52,6 +52,15 @@ const getCourses = asyncHandler(async (req, res, next) => {
         ],
         [
           sequelize.literal(`(
+            SELECT COALESCE(SUM(duration_min), 0)
+            FROM lessons
+            INNER JOIN course_modules ON lessons.module_id = course_modules.id
+            WHERE course_modules.course_id = Course.id
+          )`),
+          'total_duration_min'
+        ],
+        [
+          sequelize.literal(`(
             SELECT COUNT(*)
             FROM lessons
             INNER JOIN course_modules ON lessons.module_id = course_modules.id
@@ -208,6 +217,16 @@ const createCourse = asyncHandler(async (req, res, next) => {
       courseData.discount_percentage = 0;
     }
 
+    if (courseData.course_mode === 'Online') {
+      courseData.publish_date = null;
+      courseData.expire_date = null;
+    } else {
+      if (!courseData.publish_date || !courseData.expire_date) {
+        await transaction.rollback();
+        return next(new ApiError(400, "Publish and Expire dates are required for offline courses"));
+      }
+    }
+
     const course = await CourseModel.create(courseData, { transaction })
 
     if (media && Array.isArray(media)) {
@@ -261,6 +280,20 @@ const updateCourse = asyncHandler(async (req, res, next) => {
       courseData.fixed_amount = 0;
       courseData.discount_amount = 0;
       courseData.discount_percentage = 0;
+    }
+
+    if (courseData.course_mode === 'Online') {
+      courseData.publish_date = null;
+      courseData.expire_date = null;
+    } else {
+      // Only validate if dates are being updated
+      if (courseData.course_mode === 'Offline' && (!courseData.publish_date || !courseData.expire_date)) {
+        // Check if existing course has them if not in body
+        if (!course.publish_date || !course.expire_date) {
+          await transaction.rollback();
+          return next(new ApiError(400, "Publish and Expire dates are required for offline courses"));
+        }
+      }
     }
 
     await course.update(courseData, { transaction })

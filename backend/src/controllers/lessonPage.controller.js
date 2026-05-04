@@ -3,12 +3,22 @@ import { ApiResponse } from '../utils/ApiResponse.js'
 import { ApiError } from '../utils/ApiError.js'
 import { responseMessage } from '../utils/responseMessage.js'
 import sequelize from '../config/database.js'
-import { LessonPageModel } from '../models/associations.js'
+import { LessonPageModel, LessonModel } from '../models/associations.js'
 import { commitMedia, cleanupOrphanedMedia } from '../utils/mediaCommit.js'
+
+/** Helper to update Lesson total duration based on its pages */
+const updateLessonDuration = async (lesson_id) => {
+  const pages = await LessonPageModel.findAll({
+    where: { lesson_id },
+    attributes: ['required_time']
+  })
+  const totalDuration = pages.reduce((sum, page) => sum + (page.required_time || 0), 0)
+  await LessonModel.update({ duration_min: totalDuration }, { where: { id: lesson_id } })
+}
 
 /** Create Lesson Page */
 const createPage = asyncHandler(async (req, res, next) => {
-  const { lesson_id, title, html_content, page_order, is_preview, status } = req.body
+  const { lesson_id, title, html_content, page_order, is_preview, status, required_time } = req.body
   if (!lesson_id || !title) {
     return next(new ApiError(400, 'Lesson ID and Title are required'))
   }
@@ -22,8 +32,13 @@ const createPage = asyncHandler(async (req, res, next) => {
     html_content: committedHtml,
     page_order: page_order || 1,
     is_preview: is_preview || false,
+    required_time: required_time || 0,
     status: status || 'draft',
   })
+
+  // Update parent lesson duration
+  await updateLessonDuration(lesson_id)
+
   return res.status(201).json(new ApiResponse(201, page, responseMessage.created('Lesson page')))
 })
 
@@ -52,6 +67,10 @@ const updatePage = asyncHandler(async (req, res, next) => {
   }
 
   await page.update({ ...rest, html_content: finalHtml })
+
+  // Update parent lesson duration
+  await updateLessonDuration(page.lesson_id)
+
   return res.status(200).json(new ApiResponse(200, page, responseMessage.updated('Lesson page')))
 })
 
@@ -62,7 +81,12 @@ const deletePage = asyncHandler(async (req, res, next) => {
   if (!page) {
     return next(new ApiError(404, responseMessage.notFound('Lesson page')))
   }
+  const lessonId = page.lesson_id
   await page.destroy()
+
+  // Update parent lesson duration
+  await updateLessonDuration(lessonId)
+
   return res.status(200).json(new ApiResponse(200, null, responseMessage.deleted('Lesson page')))
 })
 

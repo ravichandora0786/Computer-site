@@ -18,7 +18,8 @@ import {
   MdInfoOutline,
   MdPolicy,
   MdStarOutline,
-  MdReviews
+  MdReviews,
+  MdVerified
 } from 'react-icons/md'
 import { useDispatch } from 'react-redux'
 import { logoutApp } from '../../pages/admin/common/slice'
@@ -158,6 +159,14 @@ const AdminSidebar = ({ collapsed, toggleCollapsed, toggled, onBackdropClick }) 
             active={isActive('/admin/users')}
           >
             Users
+          </MenuItem>
+
+          <MenuItem
+            icon={<MdVerified />}
+            component={<Link to="/admin/certificates" />}
+            active={isActive('/admin/certificates')}
+          >
+            Certificates
           </MenuItem>
 
           <MenuItem

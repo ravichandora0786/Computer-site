@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
   MdDashboard, MdStars, MdAssignment, MdLibraryBooks, 
   MdDescription, MdAssessment, MdVerified, MdSettings,
@@ -14,7 +14,18 @@ import clsx from "clsx";
 const UserSidebar = () => {
   const dispatch = useDispatch();
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, dashboardStats } = useSelector(state => state.userAuth);
+  
+  const lastCourse = dashboardStats?.enrolledCourses?.[0];
+
+  const handleContinue = () => {
+    if (lastCourse?.courseId) {
+      navigate(`/course-detail/${lastCourse.courseId}`);
+    } else {
+      navigate("/user/dashboard");
+    }
+  };
   
   const menuItems = [
     { name: "Dashboard", path: "/user/dashboard", icon: MdDashboard, badge: null },
@@ -96,7 +107,10 @@ const UserSidebar = () => {
       </div>
 
       <div className="mt-auto px-3 py-6 border-t border-gray-100 dark:border-gray-800">
-         <button className="w-full flex items-center justify-center gap-2 py-3 bg-primary text-white rounded-lg font-bold text-sm hover:bg-primary/90 transition shadow-md shadow-primary/10">
+         <button 
+           onClick={handleContinue}
+           className="w-full flex items-center justify-center gap-2 py-3 bg-primary text-white rounded-lg font-bold text-sm hover:bg-primary/90 transition shadow-md shadow-primary/10"
+         >
             <MdDashboard />
             Continue Learning
          </button>
