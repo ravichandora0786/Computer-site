@@ -25,3 +25,5 @@ yarn-debug.log*
 dist/
 build/
 out/
+
+backend/public/media/
