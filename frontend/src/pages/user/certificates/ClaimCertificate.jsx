@@ -1,19 +1,28 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   MdCheckCircle, MdSchool, MdStars, MdEdit, 
   MdChevronRight, MdWorkspacePremium, MdFileDownload,
   MdShare, MdVerified, MdEmojiEvents, MdLibraryBooks,
-  MdHourglassEmpty, MdSend, MdLocationOn, MdInfo
+  MdHourglassEmpty, MdSend, MdLocationOn, MdInfo,
+  MdClose
 } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
+import html2pdf from "html2pdf.js";
 import * as actions from "./slice";
 import * as selectors from "./selector";
+import { toast } from "react-toastify";
+import GenericModal from "@/components/ui/GenericModal";
+import CertificatePreview from "@/components/Certificate/CertificatePreview";
+import CourseSlider from "@/components/user/CourseSlider";
+import { fetchCourses } from "../courses/slice";
+import { selectCourseItems } from "../courses/selector";
 
 const ClaimCertificate = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const previewRef = useRef();
   const { user, dashboardStats } = useSelector((state) => state.userAuth);
   
   const dbCertificates = useSelector(selectors.selectUserCertificates);
@@ -21,12 +30,16 @@ const ClaimCertificate = () => {
   const applying = useSelector(selectors.selectApplyingStatus);
 
   const [name, setName] = useState(user?.user_name || "");
+  const [selectedPreview, setSelectedPreview] = useState(null);
+  
+  const allCourses = useSelector(selectCourseItems);
 
   const enrolledCourses = dashboardStats?.enrolledCourses || [];
   const completedCourses = enrolledCourses.filter(c => c.progress === 100 || c.timeRemaining === 'Completed');
 
   useEffect(() => {
     dispatch(actions.fetchUserCertificates());
+    dispatch(fetchCourses());
   }, [dispatch]);
 
   const handleApply = (courseId) => {
@@ -34,6 +47,58 @@ const ClaimCertificate = () => {
       courseId,
       custom_name: name
     }));
+  };
+
+  const handleDownload = async () => {
+    if (!previewRef.current) {
+      toast.error("Certificate content not found!");
+      return;
+    }
+    
+    const toastId = toast.info("Preparing high-quality PDF...", { autoClose: false });
+    
+    try {
+      console.log("Starting PDF generation...");
+      const element = previewRef.current;
+      
+      // Ensure all images are loaded
+      const images = element.getElementsByTagName('img');
+      await Promise.all(Array.from(images).map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(resolve => { img.onload = resolve; img.onerror = resolve; });
+      }));
+
+      const opt = {
+        margin: 0,
+        filename: `Certificate_${selectedPreview.course.title.replace(/\s+/g, '_')}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+          scale: 2, // Slightly lower scale for faster processing
+          useCORS: true,
+          letterRendering: true,
+          scrollX: 0,
+          scrollY: 0,
+          windowWidth: 800,
+          windowHeight: 560
+        },
+        jsPDF: { 
+          unit: 'px', 
+          format: [800, 560], 
+          orientation: 'landscape'
+        }
+      };
+
+      console.log("Calling html2pdf...");
+      // Use the worker API for better control
+      const worker = html2pdf().set(opt).from(element);
+      await worker.save();
+      
+      console.log("PDF saved successfully");
+      toast.update(toastId, { render: "Certificate downloaded!", type: "success", autoClose: 3000 });
+    } catch (error) {
+      console.error("PDF Generation Error:", error);
+      toast.update(toastId, { render: `Download failed: ${error.message || 'Unknown error'}`, type: "error", autoClose: 5000 });
+    }
   };
 
   // View 1: Placeholder/Empty State (No courses completed)
@@ -101,13 +166,7 @@ const ClaimCertificate = () => {
          <div className="absolute top-0 right-0 p-8 opacity-[0.02] pointer-events-none"><MdEmojiEvents size={200} className="text-primary" /></div>
          <div className="z-10 text-center md:text-left">
             <h1 className="text-3xl font-black text-gray-800 dark:text-white tracking-tighter uppercase italic mb-2">My Achievements</h1>
-            <p className="text-gray-500 dark:text-gray-400 font-bold italic uppercase text-xs tracking-widest">You have earned {completedCourses.length} professional certificates. Keep up the great work!</p>
-         </div>
-         <div className="flex gap-4 z-10 font-black italic">
-            <div className="bg-primary/10 px-6 py-4 rounded-2xl text-center border border-primary/20">
-               <div className="text-2xl text-primary leading-none">{completedCourses.length}</div>
-               <div className="text-[9px] text-primary/60 uppercase tracking-widest mt-1">Earned</div>
-            </div>
+            <p className="text-gray-500 dark:bg-gray-400 font-bold italic uppercase text-xs tracking-widest">You have earned {completedCourses.length} professional certificates. Keep up the great work!</p>
          </div>
       </div>
 
@@ -124,7 +183,6 @@ const ClaimCertificate = () => {
           return (
             <motion.div key={course.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }} className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-xl transition-all duration-300 group overflow-hidden relative">
               
-              {/* Type & Mode Badges */}
               <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
                 <div className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest italic shadow-lg ${isPaid ? 'bg-orange-500 text-white' : 'bg-emerald-500 text-white'}`}>
                   {isPaid ? 'Premium Program' : 'Free Learning'}
@@ -165,7 +223,7 @@ const ClaimCertificate = () => {
                 </div>
                 {canDownload && (
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                    <button className="p-2 bg-white rounded-full text-primary shadow-lg hover:scale-110 transition-transform"><MdFileDownload size={20} /></button>
+                    <button onClick={() => setSelectedPreview({ course, dbCert })} className="p-2 bg-white rounded-full text-primary shadow-lg hover:scale-110 transition-transform"><MdFileDownload size={20} /></button>
                     <button className="p-2 bg-white rounded-full text-gray-600 shadow-lg hover:scale-110 transition-transform"><MdShare size={20} /></button>
                   </div>
                 )}
@@ -193,11 +251,10 @@ const ClaimCertificate = () => {
                       COMPLETED: {new Date(course.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </div>
                     {canDownload && (
-                      <button className="text-primary font-black text-[10px] italic hover:underline flex items-center gap-1 uppercase tracking-widest">View Full <MdChevronRight /></button>
+                      <button onClick={() => setSelectedPreview({ course, dbCert })} className="text-primary font-black text-[10px] italic hover:underline flex items-center gap-1 uppercase tracking-widest">View Full <MdChevronRight /></button>
                     )}
                   </div>
 
-                  {/* Offline Collection Info */}
                   {isApproved && isOffline && (
                     <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
                        <MdInfo className="text-blue-500 flex-shrink-0" size={18} />
@@ -207,7 +264,6 @@ const ClaimCertificate = () => {
                     </div>
                   )}
 
-                  {/* Apply Button for Paid Courses */}
                   {isPaid && !hasApplied && (
                     <button 
                       onClick={() => handleApply(course.courseId)}
@@ -240,6 +296,66 @@ const ClaimCertificate = () => {
   return (
     <div className="transition-all duration-500">
       {completedCourses.length === 0 ? <PlaceholderView /> : <CertificateListView />}
+
+      <GenericModal 
+        showModal={!!selectedPreview}
+        closeModal={() => setSelectedPreview(null)}
+        modalTitle="Certificate Preview"
+        widthClasses="max-w-5xl"
+        modalBody={
+          <div className="flex flex-col gap-8">
+            <div className="flex-1 bg-gray-50 dark:bg-gray-950 p-4 md:p-12 min-h-[400px] flex items-center justify-center rounded-2xl overflow-hidden">
+               <CertificatePreview 
+                  course={selectedPreview?.course} 
+                  user={user} 
+                  certificate={selectedPreview?.dbCert}
+                  previewRef={previewRef}
+               />
+            </div>
+
+            <div className="flex flex-col md:flex-row gap-6 items-center justify-between border-t pt-8">
+              <div className="flex items-center gap-3 text-gray-500 text-sm italic font-medium">
+                <MdVerified className="text-emerald-500" />
+                <span>This is a verified digital credential.</span>
+              </div>
+              <div className="flex gap-4 w-full md:w-auto">
+                <button 
+                  onClick={() => setSelectedPreview(null)}
+                  className="flex-1 md:flex-none px-8 py-4 rounded-2xl font-black text-[10px] uppercase italic tracking-widest text-gray-500 hover:bg-gray-100 transition-all border border-gray-100"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleDownload}
+                  className="flex-1 md:flex-none px-12 py-4 bg-primary text-white rounded-2xl font-black text-[10px] uppercase italic tracking-widest shadow-xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3"
+                >
+                  Download Certificate <MdFileDownload size={18} />
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+      />
+
+      {/* Suggested Courses Slider */}
+      {allCourses.filter(c => !enrolledCourses.some(ec => ec.courseId === c.id)).length > 0 && (
+        <div className="mt-24">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+            <div>
+              <h2 className="text-3xl font-black text-gray-800 dark:text-white tracking-tighter uppercase italic leading-none">
+                Expand Your Mastery
+              </h2>
+              <p className="text-gray-500 dark:text-gray-400 font-bold uppercase italic text-[10px] tracking-[0.3em] mt-2">
+                Recommended Programs for Your Career
+              </p>
+            </div>
+          </div>
+          <CourseSlider 
+            courses={allCourses.filter(c => !enrolledCourses.some(ec => ec.courseId === c.id))} 
+            title="Next Step in Your Journey" 
+          />
+        </div>
+      )}
     </div>
   );
 };

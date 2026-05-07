@@ -12,10 +12,10 @@ export const STATUS_OPTIONS = [
 // Specific Status for Batches
 export const BATCH_STATUS_OPTIONS = [
   { value: 'draft', label: 'Draft' },
-  { value: 'published', label: 'Published' },
-  { value: 'ongoing', label: 'Ongoing' },
+  { value: 'active', label: 'Active' },
+  { value: 'coming soon', label: 'Coming Soon' },
   { value: 'completed', label: 'Completed' },
-  { value: 'hidden', label: 'Hidden' }
+  { value: 'archived', label: 'Archived' }
 ];
 
 // Specific Status for Courses
@@ -24,6 +24,7 @@ export const COURSE_STATUS_OPTIONS = [
   { value: 'active', label: 'Active' },
   { value: 'coming soon', label: 'Coming Soon' },
   { value: 'inactive', label: 'Inactive' },
+  { value: 'completed', label: 'Completed' },
   { value: 'archived', label: 'Archived' }
 ];
 
@@ -94,6 +95,16 @@ export const PAGINATION_LIMIT_OPTIONS = [
   { value: 25, label: '25' },
   { value: 50, label: '50' },
   { value: 100, label: '100' }
+];
+
+export const WEEKDAY_OPTIONS = [
+  { label: "Monday", value: "Mon" },
+  { label: "Tuesday", value: "Tue" },
+  { label: "Wednesday", value: "Wed" },
+  { label: "Thursday", value: "Thu" },
+  { label: "Friday", value: "Fri" },
+  { label: "Saturday", value: "Sat" },
+  { label: "Sunday", value: "Sun" },
 ];
 
 export const GALLERY_PAGINATION_LIMIT_OPTIONS = [

@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
-  MdStars, MdVerified, MdAccessTime, MdLocalFireDepartment, 
-  MdChevronRight, MdOpenInNew, MdSearch, MdMoreVert
+  MdChevronRight, MdOpenInNew, MdSearch, MdMoreVert,
+  MdInfo, MdVerified
 } from "react-icons/md";
-import { httpRequest, endPoints } from "../../../request";
 import clsx from "clsx";
 import CourseSlider from "@/components/user/CourseSlider";
 import { fetchCourses } from "@/pages/user/courses/slice";
+import CourseProgressCard from "@/components/user/CourseProgressCard";
+import LearnerStats from "@/components/user/LearnerStats";
 
 const UserDashboard = () => {
   const navigate = useNavigate();
@@ -18,20 +19,18 @@ const UserDashboard = () => {
   const { items: allCourses } = useSelector((state) => state.courses);
   const stats = dashboardStats;
 
-  const statCards = [
-    { label: "XP", value: "5", icon: MdStars, color: "text-amber-500", bg: "bg-amber-50" },
-    { label: "Certificates", value: "0", icon: MdVerified, color: "text-blue-500", bg: "bg-blue-50" },
-    { label: "Learning Streak", value: "1", icon: MdLocalFireDepartment, color: "text-orange-500", bg: "bg-orange-50" },
-    { label: "Total Learning Hours", value: "0", icon: MdAccessTime, color: "text-purple-500", bg: "bg-purple-50" },
-  ];
-
-  const inProgressCourses = stats?.enrolledCourses || [];
-  const profileCompletion = stats?.profileCompletion || 0;
-  const apiBase = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || "http://localhost:5000";
+  const [activeTab, setActiveTab] = useState("progress");
 
   useEffect(() => {
     dispatch(fetchCourses());
   }, [dispatch]);
+
+  const enrolledCourses = stats?.enrolledCourses || [];
+  const inProgressCourses = enrolledCourses.filter(c => c.progress < 100 && c.timeRemaining !== 'Completed');
+  const completedCourses = enrolledCourses.filter(c => c.progress === 100 || c.timeRemaining === 'Completed');
+  const claimedCertificates = stats?.certificates || [];
+
+  const apiBase = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || "http://localhost:5000";
 
   if (!stats) {
     return <div className="flex items-center justify-center min-h-[400px]">
@@ -40,186 +39,143 @@ const UserDashboard = () => {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Welcome Header */}
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
-             {stats?.userName || user?.user_name}'s Dashboard – let's jump back in.
-          </h1>
-        </div>
-      </header>
+    <div className="space-y-10 pb-20">
+      {/* Title */}
+      <h1 className="text-2xl font-black text-gray-800 dark:text-white uppercase tracking-tight italic">
+        Courses & Certificates
+      </h1>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map((stat) => (
-          <div key={stat.label} className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-4 transition-transform hover:scale-[1.02]">
-            <div className={clsx("p-3 rounded-full", stat.bg)}>
-              <stat.icon className={clsx("w-6 h-6", stat.color)} />
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">{stat.label}</p>
-              <p className="text-xl font-bold text-gray-800 dark:text-white uppercase italic">{stat.value}</p>
-            </div>
-          </div>
-        ))}
-        <button className="col-span-1 flex items-center justify-center text-sm font-semibold text-primary hover:text-primary/80">
-           View All Achievements <MdChevronRight className="w-5 h-5" />
-         </button>
-      </div>
+      {/* Stats Row */}
+      <LearnerStats 
+        stats={stats} 
+        enrolledCount={enrolledCourses.length} 
+        completedCount={completedCourses.length} 
+        claimedCount={claimedCertificates.length} 
+      />
 
-      {/* Main Content Area */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
-          {/* Courses In Progress */}
-          <section className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-gray-50 dark:border-gray-700 flex justify-between items-center">
-               <h2 className="font-bold text-gray-800 dark:text-white uppercase tracking-tight">Start Learning ({inProgressCourses.length})</h2>
-               <button 
-                 onClick={() => navigate("/user/my-courses")}
-                 className="text-gray-400 hover:text-primary"
-               >
-                 <MdOpenInNew className="w-5 h-5" />
-               </button>
-            </div>
-            <div className="divide-y divide-gray-50">
-              {inProgressCourses.length > 0 ? inProgressCourses.map((course) => {
-                const getThumbnail = (thumb) => {
-                  if (!thumb) return null;
-                  try {
-                    const parsed = typeof thumb === 'string' && thumb.startsWith('[') ? JSON.parse(thumb) : thumb;
-                    return Array.isArray(parsed) ? parsed[0] : parsed;
-                  } catch (e) {
-                    return thumb;
-                  }
-                };
-                const displayThumb = getThumbnail(course.thumbnail);
-
-                return (
-                  <div key={course.id} className="p-6 flex flex-col md:flex-row gap-6 hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors">
-                    <div className="w-full md:w-48 h-32 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-700 relative group border border-gray-100 dark:border-gray-700/50">
-                      <img 
-                        src={displayThumb ? `${apiBase}${displayThumb}` : "https://images.unsplash.com/photo-1542831371-29b0f74f9713?auto=format&fit=crop&w=400"} 
-                        alt="Course" 
-                        className="w-full h-full object-cover" 
-                      />
-                    </div>
-                    <div className="flex-1 space-y-3">
-                      <h3 className="font-bold text-gray-800 dark:text-white leading-tight pr-4">{course.title}</h3>
-                      <div className="space-y-1">
-                        <div className="w-full h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                          <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${course.progress || 0}%` }}></div>
-                        </div>
-                        <p className="text-xs font-bold text-gray-500 dark:text-gray-400">{course.progress || 0}% Complete</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold py-0.5 px-2 bg-slate-100 dark:bg-gray-700 text-slate-500 dark:text-gray-300 rounded uppercase">Last Active: Recently</span>
-                      </div>
-                    </div>
-                    <div className="flex flex-col justify-center items-center md:items-end gap-2">
-                      <button 
-                        onClick={() => navigate(`/course-detail/${course.courseId}`)}
-                        className="px-8 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary/90 transition shadow-lg shadow-primary/5"
-                      >
-                         Continue Learning
-                      </button>
-                      <p className="text-[10px] font-bold text-primary uppercase tracking-tighter">{course.timeRemaining}</p>
-                    </div>
-                  </div>
-                );
-              }) : (
-                <div className="p-12 text-center text-gray-500 font-medium">
-                  You haven't enrolled in any courses yet.
-                </div>
+      {/* Tabs System */}
+      <div className="space-y-6">
+        <div className="flex border-b border-gray-200 dark:border-gray-700 gap-8 overflow-x-auto no-scrollbar">
+          {[
+            { id: "progress", label: `Courses in Progress (${inProgressCourses.length})` },
+            { id: "completed", label: `Completed Courses (${completedCourses.length})` },
+            { id: "claimed", label: `Claimed Certificates (${claimedCertificates.length})` },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={clsx(
+                "pb-4 text-sm font-bold uppercase tracking-tight transition-all relative whitespace-nowrap",
+                activeTab === tab.id 
+                  ? "text-primary border-b-4 border-primary" 
+                  : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
               )}
-            </div>
-          </section>
-
-          {/* Marketing Banner */}
-          <div className="bg-primary/5 dark:bg-primary/10 rounded-xl p-6 border border-primary/10 flex items-center justify-between gap-4">
-             <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-lg flex items-center justify-center text-2xl shadow-sm">📱</div>
-                <p className="text-primary font-medium">No internet? No problem! Download any course on the app and learn on the go.</p>
-             </div>
-             <button className="bg-white dark:bg-gray-800 px-6 py-2 rounded-lg font-bold text-primary border border-primary/20 shadow-sm whitespace-nowrap">Get App</button>
-          </div>
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
-        {/* Sidebar Mini Components */}
-        <div className="space-y-6">
-           {/* Profile Completion Card */}
-           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-2"><MdMoreVert className="text-gray-300 dark:text-gray-600" /></div>
-              <div className="flex flex-col items-center text-center">
-                 <div className="w-24 h-24 relative mb-4">
-                    <svg className="w-full h-full transform -rotate-90">
-                       <circle cx="48" cy="48" r="44" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-gray-100 dark:text-gray-700" />
-                       <circle 
-                         cx="48" 
-                         cy="48" 
-                         r="44" 
-                         stroke="currentColor" 
-                         strokeWidth="8" 
-                         fill="transparent" 
-                         strokeDasharray="276" 
-                         strokeDashoffset={276 - (276 * profileCompletion) / 100} 
-                         className="text-primary transition-all duration-1000" 
-                        />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                       <span className="text-xl font-bold text-gray-800 dark:text-white">{profileCompletion}%</span>
-                       <span className="text-[8px] font-bold text-gray-400 dark:text-gray-500 uppercase">Complete</span>
-                    </div>
-                 </div>
-                 <h4 className="font-bold text-gray-800 dark:text-white">{profileCompletion === 100 ? "Profile Complete" : "Finish Your Profile"}</h4>
-                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                   {profileCompletion === 100 
-                    ? "Great job! Your profile is fully updated and looking professional." 
-                    : "Get noticed by employers by completing your profile details."}
-                 </p>
-                 <button className="mt-4 w-full py-2 border-2 border-primary/10 dark:border-primary/20 text-primary font-bold rounded-lg hover:bg-primary/5 dark:hover:bg-primary/10 transition">
-                    {profileCompletion === 100 ? "View Profile" : "Update Now"}
-                 </button>
-              </div>
-           </div>
+        {/* Info Banner */}
+        <div className="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/30 p-4 rounded-2xl flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <MdInfo className="text-emerald-500" size={24} />
+            <p className="text-emerald-800 dark:text-emerald-400 text-sm font-medium">
+              Your daily learning time matches the Average Computer Site Learner.
+            </p>
+          </div>
+          <button className="text-emerald-600 dark:text-emerald-400 text-xs font-black uppercase tracking-widest hover:underline whitespace-nowrap">
+            View Your Learning Stats
+          </button>
+        </div>
 
-           {/* Quick Search */}
-           <div className="bg-primary/90 p-6 rounded-xl text-white shadow-lg shadow-primary/10">
-              <h4 className="font-bold text-lg mb-2">Find Your Next Lesson</h4>
-              <p className="text-white/80 text-sm mb-4">Continue your journey with thousands of free courses.</p>
-              <div className="relative">
-                 <input type="text" placeholder="What do you want to learn?" className="w-full bg-white/20 placeholder-white/60 border-none rounded-lg py-2.5 px-10 text-sm focus:ring-2 focus:ring-white/40" />
-                 <MdSearch className="absolute left-3 top-3 text-white/60" />
-              </div>
-           </div>
+        {/* Tab Content */}
+        <div className="space-y-4">
+          <AnimatePresence mode="wait">
+            {activeTab === "progress" && (
+              <motion.div 
+                key="progress"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="space-y-4"
+              >
+                {inProgressCourses.length > 0 ? inProgressCourses.map((course) => (
+                  <CourseProgressCard key={course.id} course={course} apiBase={apiBase} navigate={navigate} />
+                )) : (
+                  <EmptyState message="No courses in progress. Explore our library to start learning!" />
+                )}
+              </motion.div>
+            )}
+
+            {activeTab === "completed" && (
+              <motion.div 
+                key="completed"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="space-y-4"
+              >
+                {completedCourses.length > 0 ? completedCourses.map((course) => (
+                  <CourseProgressCard key={course.id} course={course} apiBase={apiBase} navigate={navigate} />
+                )) : (
+                  <EmptyState message="You haven't completed any courses yet. Finish one to see it here!" />
+                )}
+              </motion.div>
+            )}
+
+            {activeTab === "claimed" && (
+              <motion.div 
+                key="claimed"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="grid grid-cols-1 md:grid-cols-2 gap-4"
+              >
+                {claimedCertificates.length > 0 ? claimedCertificates.map((cert) => (
+                  <div key={cert.id} className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-4">
+                    <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/20 text-blue-500 rounded-xl flex items-center justify-center">
+                      <MdVerified size={24} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-gray-800 dark:text-white truncate uppercase italic">{cert.course?.title}</h4>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">ID: {cert.certificate_number}</p>
+                    </div>
+                    <button 
+                      onClick={() => navigate('/user/certificates')}
+                      className="text-primary font-black uppercase text-[10px] tracking-widest hover:underline"
+                    >
+                      View
+                    </button>
+                  </div>
+                )) : (
+                  <div className="col-span-full">
+                    <EmptyState message="No certificates claimed yet." />
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
-      {/* Recommended Courses Section */}
-      <section className="mt-16">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-20 uppercase italic">
-          <div>
-            <h2 className="text-[10px] font-black text-primary uppercase tracking-[0.5em] mb-4 font-bold">Mastery Library</h2>
-            <h3 className="text-3xl md:text-5xl font-black text-gray-800 dark:text-white tracking-tighter italic">Recommended For You</h3>
-          </div>
-          <div className="flex items-center gap-12">
-            <button 
-              onClick={() => navigate("/user/courses")}
-              className="group flex items-center gap-4 text-xs font-black tracking-[0.2em] border-b-2 border-gray-800 dark:border-white pb-2 hover:text-primary hover:border-primary transition-all text-gray-800 dark:text-white uppercase italic whitespace-nowrap"
-            >
-              View All Courses <MdChevronRight size={22} className="group-hover:translate-x-2 transition-transform" />
-            </button>
-            {/* Spacer to make room for slider navigation buttons which are absolute positioned */}
-            <div className="hidden md:block w-24"></div>
-          </div>
-        </div>
-        <div className="relative">
-          <CourseSlider courses={allCourses} />
-        </div>
+      {/* Recommended Slider */}
+      <section className="pt-10">
+        <CourseSlider 
+          courses={allCourses} 
+          title="Recommended For You" 
+          subtitle="Explore the latest mastery programs"
+          viewAllLink="/user/courses"
+        />
       </section>
     </div>
   );
 };
 
-export default UserDashboard;
+const EmptyState = ({ message }) => (
+  <div className="py-12 text-center bg-gray-50 dark:bg-gray-900/50 rounded-3xl border border-dashed border-gray-200 dark:border-gray-800">
+    <p className="text-gray-400 font-bold italic uppercase tracking-widest text-xs">{message}</p>
+  </div>
+);
 
+export default UserDashboard;

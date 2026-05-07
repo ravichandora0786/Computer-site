@@ -40,10 +40,30 @@ const CourseCard = ({ course }) => {
     return "https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&q=80&w=1200";
   };
 
-  // Extract learning outcomes from overview (assuming newline or comma separated)
-  const learningOutcomes = course.overview 
-    ? course.overview.split(/[,\n]/).slice(0, 3).map(item => item.trim())
-    : ["Master the core concepts", "Practical hands-on exercises", "Industry best practices"];
+  // Extract learning outcomes properly by parsing the HTML content
+  const getOutcomes = () => {
+    if (!course.overview) return [];
+    
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(course.overview, 'text/html');
+      
+      // Try to find list items first (from the editor's bullet points)
+      // We use innerHTML to preserve bold/color/etc. formatting
+      const listItems = Array.from(doc.querySelectorAll('li')).map(li => li.innerHTML.trim()).filter(t => t);
+      if (listItems.length > 0) return listItems.slice(0, 3);
+      
+      // Fallback: use paragraphs or clean text
+      const cleanText = doc.body.innerHTML || "";
+      const items = cleanText.split(/[,\n•]|\s{2,}/).map(item => item.trim()).filter(i => i.length > 2).slice(0, 3);
+      return items;
+    } catch (e) {
+      return [];
+    }
+  };
+
+  const learningOutcomes = getOutcomes();
+  const plainOverview = course.overview?.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ') || "";
 
   return (
     <motion.div
@@ -110,24 +130,61 @@ const CourseCard = ({ course }) => {
           </span>
         </div>
 
-        {/* Divider */}
-        <div className="h-px bg-gray-100 dark:bg-gray-800 w-full mb-6" />
+        {/* Divider or Progress Bar */}
+        {course.progress !== undefined && isEnrolled ? (
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-black text-primary uppercase tracking-tighter">Course Progress</span>
+              <span className="text-[10px] font-black text-primary uppercase tracking-tighter">{Math.round(course.progress)}%</span>
+            </div>
+            <div className="w-full h-2 bg-primary/10 dark:bg-gray-800 rounded-full overflow-hidden">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${course.progress}%` }}
+                transition={{ duration: 1, ease: "easeOut" }}
+                className="h-full bg-primary rounded-full"
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="h-px bg-gray-100 dark:bg-gray-800 w-full mb-6" />
+        )}
 
         {/* Learning Outcomes */}
         <div className="mb-8 flex-1">
           <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-4">You Will Learn How To</h4>
           <ul className="space-y-3">
-            {learningOutcomes?.map((outcome, idx) => (
-              <li key={idx} className="flex items-start gap-3 group/item">
+            {learningOutcomes?.length > 0 ? (
+              learningOutcomes.map((outcome, idx) => (
+                <li key={idx} className="flex items-start gap-3 group/item">
+                  <div className="mt-0.5 w-4 h-4 rounded-full bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center flex-shrink-0">
+                    <MdCheck className="text-emerald-500" size={12} />
+                  </div>
+                  <span 
+                    className="text-xs font-medium text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-2"
+                    dangerouslySetInnerHTML={{ __html: outcome }}
+                  />
+                </li>
+              ))
+            ) : (
+              <li className="flex items-start gap-3 group/item">
                 <div className="mt-0.5 w-4 h-4 rounded-full bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center flex-shrink-0">
                   <MdCheck className="text-emerald-500" size={12} />
                 </div>
-                <span className="text-xs font-medium text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-2">
-                  {outcome}
+                <span className="text-xs font-medium text-gray-600 dark:text-gray-400 leading-relaxed">
+                  Master the core concepts and gain hands-on experience.
                 </span>
               </li>
-            ))}
+            )}
           </ul>
+          {plainOverview.length > 100 && (
+            <Link 
+              to={`/course-detail/${course.id}`}
+              className="mt-4 inline-block text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary-dark transition-colors"
+            >
+              ... Learn More
+            </Link>
+          )}
         </div>
 
         {/* Action Buttons */}

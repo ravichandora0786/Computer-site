@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  MdFilterList, MdSearch, MdStars, MdArrowForward,
-  MdChevronLeft, MdChevronRight, MdClose, MdRefresh
+  MdFilterList, MdSearch, MdChevronLeft, MdChevronRight
 } from "react-icons/md";
 import {
   fetchCourses, setFilters, resetFilters
@@ -14,6 +13,9 @@ import {
   selectCoursesFilters, selectCoursesPagination
 } from "./selector";
 import CourseCard from "@/components/user/CourseCard";
+import CourseSlider from "@/components/user/CourseSlider";
+import CourseProgressCard from "@/components/user/CourseProgressCard";
+import LearnerStats from "@/components/user/LearnerStats";
 import FilterModal from "./components/FilterModal";
 import { httpRequest, endPoints } from "@/request";
 import clsx from "clsx";
@@ -21,6 +23,7 @@ import clsx from "clsx";
 const CoursesPage = () => {
   const dispatch = useDispatch();
   const location = useLocation();
+  const navigate = useNavigate();
   const items = useSelector(selectCourseItems);
   const loading = useSelector(selectCoursesLoading);
   const filters = useSelector(selectCoursesFilters);
@@ -55,8 +58,8 @@ const CoursesPage = () => {
     setIsModalOpen(false);
   };
 
-  const isDashboardView = location.pathname.startsWith("/user/courses") || location.pathname.startsWith("/user/my-courses");
-  const isMyCoursesRoute = location.pathname.includes("/user/my-courses");
+  const isDashboardView = location.pathname.startsWith("/user/courses") || location.pathname.startsWith("/user/my-courses") || location.pathname.startsWith("/user/report");
+  const isMyCoursesRoute = location.pathname.includes("/user/my-courses") || location.pathname.includes("/user/report");
 
   const [activeTab, setActiveTab] = useState(isMyCoursesRoute ? "enrolled" : "all");
 
@@ -68,9 +71,18 @@ const CoursesPage = () => {
     dispatch(fetchCourses({ page }));
   };
 
+  const { dashboardStats } = useSelector(state => state.userAuth);
+  const enrolledCourses = dashboardStats?.enrolledCourses || [];
+  const completedCount = enrolledCourses.filter(c => c.progress === 100 || c.timeRemaining === 'Completed').length;
+  const claimedCount = dashboardStats?.certificates?.length || 0;
+
   const filteredItems = activeTab === "enrolled" 
-    ? items.filter(item => item.isEnrolled) 
+    ? enrolledCourses.filter(course => 
+        !filters.search || course.title?.toLowerCase().includes(filters.search.toLowerCase())
+      ) 
     : items;
+
+  const otherCourses = items.filter(item => !enrolledCourses.some(ec => ec.courseId === item.id));
 
   return (
     <div className={clsx("min-h-screen bg-page pb-20", isDashboardView ? "pt-0" : "pt-32")}>
@@ -89,7 +101,7 @@ const CoursesPage = () => {
                   ? "text-2xl md:text-3xl font-bold text-gray-800 dark:text-white" 
                   : "text-5xl md:text-7xl font-black text-main dark:text-white"
               )}>
-                {activeTab === "enrolled" ? "My Journey" : "Mastery Catalog"}
+                {activeTab === "enrolled" ? "Learner Report" : "Mastery Catalog"}
               </h2>
             </div>
             <div className="flex items-center gap-4">
@@ -123,6 +135,16 @@ const CoursesPage = () => {
         </div>
 
         <div className="flex flex-col gap-10">
+          
+          {/* Stats Row (Only for Learner Report) */}
+          {activeTab === "enrolled" && (
+            <LearnerStats 
+              stats={dashboardStats}
+              enrolledCount={enrolledCourses.length}
+              completedCount={completedCount}
+              claimedCount={claimedCount}
+            />
+          )}
 
           <AnimatePresence>
             {isModalOpen && (
@@ -136,7 +158,7 @@ const CoursesPage = () => {
             )}
           </AnimatePresence>
 
-          {/* Main Content Grid */}
+          {/* Main Content Grid/List */}
           <main className="flex-1">
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
@@ -146,14 +168,40 @@ const CoursesPage = () => {
               </div>
             ) : filteredItems.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-8">
-                  {filteredItems.map((course, i) => (
-                    <CourseCard key={course.id || i} course={course} />
-                  ))}
-                </div>
+                {activeTab === "enrolled" ? (
+                  /* List Layout for Learner Report */
+                  <div className="flex flex-col gap-4">
+                    {filteredItems.map((course, i) => (
+                      <CourseProgressCard 
+                        key={course.id || i} 
+                        course={course} 
+                        apiBase={apiBase} 
+                        navigate={navigate} 
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  /* Grid Layout for Catalog */
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-8">
+                    {filteredItems.map((course, i) => (
+                      <CourseCard key={course.id || i} course={course} />
+                    ))}
+                  </div>
+                )}
+
+                {/* Other Courses Slider (Only on My Courses tab) */}
+                {activeTab === "enrolled" && otherCourses.length > 0 && (
+                  <div className="mt-24">
+                    <CourseSlider 
+                      courses={otherCourses} 
+                      title="Explore More Mastery" 
+                      subtitle="Unlock new potential with our elite programs"
+                    />
+                  </div>
+                )}
 
                 {/* Pagination */}
-                {pagination && pagination.totalPages > 1 && (
+                {activeTab !== "enrolled" && pagination && pagination.totalPages > 1 && (
                   <div className="mt-16 flex items-center justify-center gap-4">
                     <button
                       disabled={pagination.currentPage === 1}

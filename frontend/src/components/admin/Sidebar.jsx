@@ -19,7 +19,8 @@ import {
   MdPolicy,
   MdStarOutline,
   MdReviews,
-  MdVerified
+  MdVerified,
+  MdTrendingUp
 } from 'react-icons/md'
 import { useDispatch } from 'react-redux'
 import { logoutApp } from '../../pages/admin/common/slice'
@@ -159,6 +160,14 @@ const AdminSidebar = ({ collapsed, toggleCollapsed, toggled, onBackdropClick }) 
             active={isActive('/admin/users')}
           >
             Users
+          </MenuItem>
+
+          <MenuItem
+            icon={<MdTrendingUp />}
+            component={<Link to="/admin/enrollments" />}
+            active={isActive('/admin/enrollments')}
+          >
+            Enrollments
           </MenuItem>
 
           <MenuItem

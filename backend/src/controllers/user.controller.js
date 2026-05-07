@@ -170,37 +170,96 @@ const getDashboardStats = asyncHandler(async (req, res, next) => {
   const profileCompletion = Math.round((filledFields / profileFields.length) * 100)
 
   // 3. Fetch Enrolled Courses with Progress
-  const { UserCourseModel, CourseModel, CourseMediaModel } = await import('../models/associations.js')
-  const enrolledCourses = await UserCourseModel.findAll({
-    where: { userId },
-    include: [{ 
-      model: CourseModel, 
-      as: 'course',
-      include: [
-        { model: UserModel, as: 'author_details', attributes: ['user_name'] },
-        { model: CourseMediaModel, as: 'media' }
-      ]
-    }]
-  })
+  const { UserCourseModel, CourseModel, CourseMediaModel, CertificateModel, TestAttemptModel } = await import('../models/associations.js')
+  
+  const [enrolledCourses, certificates, testAttempts] = await Promise.all([
+    UserCourseModel.findAll({
+      where: { userId },
+      include: [{ 
+        model: CourseModel, 
+        as: 'course',
+        attributes: {
+          include: [
+            [
+              sequelize.literal(`(
+                SELECT COALESCE(AVG(rating), 0)
+                FROM course_ratings
+                WHERE course_ratings.course_id = \`course\`.id
+              )`),
+              'avg_rating'
+            ],
+            [
+              sequelize.literal(`(
+                SELECT COUNT(*)
+                FROM course_ratings
+                WHERE course_ratings.course_id = \`course\`.id
+              )`),
+              'total_reviews'
+            ],
+            [
+              sequelize.literal(`(
+                SELECT COALESCE(SUM(duration_min), 0)
+                FROM lessons
+                INNER JOIN course_modules ON lessons.module_id = course_modules.id
+                WHERE course_modules.course_id = \`course\`.id
+              )`),
+              'total_duration_min'
+            ]
+          ]
+        },
+        include: [
+          { model: UserModel, as: 'author_details', attributes: ['user_name'] },
+          { model: CourseMediaModel, as: 'media' }
+        ]
+      }]
+    }),
+    CertificateModel.findAll({
+      where: { userId, status: 'approved' },
+      include: [{ model: CourseModel, as: 'course', attributes: ['title'] }]
+    }),
+    TestAttemptModel.findAll({
+      where: { student_id: userId }
+    })
+  ])
 
   // Format courses for frontend
-  const formattedCourses = enrolledCourses.map(ec => ({
-    id: ec.id,
-    courseId: ec.courseId,
-    title: ec.course?.title,
-    progress: ec.progress,
-    access_type: ec.course?.access_type,
-    course_mode: ec.course?.course_mode,
-    thumbnail: ec.course?.media?.find(m => m.media_type === 'image')?.url,
-    timeRemaining: ec.status === 'completed' ? 'Completed' : 'In Progress',
-    updatedAt: ec.updatedAt
-  }))
+  const formattedCourses = enrolledCourses.map(ec => {
+    const courseData = ec.course?.get({ plain: true }) || {};
+    const media = courseData.media || [];
+    const thumbnail = media.find(m => m.media_type === 'image')?.url || null;
+
+    return {
+      ...courseData,
+      media,
+      thumbnail,
+      user_course_id: ec.id,
+      id: ec.courseId,
+      courseId: ec.courseId,
+      progress: ec.progress,
+      status: ec.status,
+      timeRemaining: ec.status === 'completed' ? 'Completed' : 'In Progress',
+      isEnrolled: true,
+      updatedAt: ec.updatedAt
+    };
+  })
+
+  // Calculate Aggregated Stats
+  const avgProgress = formattedCourses.length > 0 
+    ? Math.round(formattedCourses.reduce((sum, c) => sum + (c.progress || 0), 0) / formattedCourses.length) 
+    : 0;
+    
+  const avgScore = testAttempts.length > 0
+    ? Math.round(testAttempts.reduce((sum, a) => sum + (a.score || 0), 0) / testAttempts.length)
+    : 0;
 
   return res
     .status(200)
     .json(new ApiResponse(200, {
       profileCompletion,
       enrolledCourses: formattedCourses,
+      certificates: certificates, // Approved certificates
+      avgProgress,
+      avgScore,
       userName: user.user_name
     }, 'Dashboard stats fetched successfully'))
 })

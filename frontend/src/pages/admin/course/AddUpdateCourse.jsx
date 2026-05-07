@@ -147,7 +147,7 @@ const AddUpdateCourse = () => {
   const fields = useMemo(() => [
     { name: "title", label: "Course Title", type: "text", placeholder: "Enter course title", fullWidth: true, required: true },
     { name: "description", label: "Description", type: "textarea", placeholder: "Enter course description", fullWidth: true },
-    { name: "overview", label: "Course Overview", type: "textarea", placeholder: "Detailed course overview...", fullWidth: true },
+    { name: "overview", label: "Course Overview", type: "editor", placeholder: "Detailed course overview...", fullWidth: true },
     {
       name: "course_category_id",
       label: "Category",

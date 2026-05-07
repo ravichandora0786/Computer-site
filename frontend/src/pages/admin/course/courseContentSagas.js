@@ -236,7 +236,7 @@ function* createBatchSaga(action) {
 function* updateBatchSaga(action) {
   const { id, onSuccess, ...data } = action.payload;
   try {
-    const response = yield call(httpRequest.post, `/batches/update/${id}`, data);
+    const response = yield call(httpRequest.post, `/batches/update`, { id, ...data });
     toast.success(response?.message || "Batch updated");
     if (onSuccess) yield call(onSuccess, response?.data);
   } catch (err) {
@@ -247,7 +247,7 @@ function* updateBatchSaga(action) {
 function* deleteBatchSaga(action) {
   const { id, onSuccess } = action.payload;
   try {
-    const response = yield call(httpRequest.delete, `/batches/delete/${id}`);
+    const response = yield call(httpRequest.post, `/batches/delete`, { id });
     toast.success(response?.message || "Batch deleted");
     if (onSuccess) yield call(onSuccess);
   } catch (err) {

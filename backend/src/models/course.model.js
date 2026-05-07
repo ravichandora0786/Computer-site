@@ -17,10 +17,10 @@ const CourseModel = sequelize.define(
       unique: true,
     },
     description: {
-      type: DataTypes.TEXT,
+      type: DataTypes.TEXT('long'),
     },
     overview: {
-      type: DataTypes.TEXT,
+      type: DataTypes.TEXT('long'),
     },
     publish_date: {
       type: DataTypes.STRING,

@@ -6,14 +6,17 @@ import {
   MdAccessTime, MdMenuBook, MdPerson, MdStars,
   MdLock, MdCheckCircle, MdKeyboardArrowDown, MdPlayCircleOutline,
   MdShare, MdFavoriteBorder, MdInfoOutline, MdAssignment,
-  MdChevronLeft, MdChevronRight, MdPlayCircle, MdVerified
+  MdChevronLeft, MdChevronRight, MdPlayCircle, MdVerified,
+  MdClose, MdQrCodeScanner, MdContentCopy, MdFileUpload
 } from "react-icons/md";
-import { fetchCourseDetail } from "./slice";
-import { selectCourseDetail, selectDetailLoading } from "./selector";
+import { fetchCourses, fetchCourseDetail } from "./slice";
+import { selectCourseDetail, selectDetailLoading, selectCourseItems } from "./selector";
 import { openLoginModal, enrollCourseSuccess } from "../auth/slice";
 import { httpRequest, endPoints } from "../../../request";
 import { toast } from "react-toastify";
 import clsx from "clsx";
+import CourseSlider from "@/components/user/CourseSlider";
+import GenericModal from "@/components/ui/GenericModal";
 
 const CourseDetail = () => {
   const { id } = useParams();
@@ -21,11 +24,15 @@ const CourseDetail = () => {
   const course = useSelector(selectCourseDetail);
   const loading = useSelector(selectDetailLoading);
   const { isAuthenticated, user } = useSelector((state) => state.userAuth);
+  const allCourses = useSelector(selectCourseItems) || [];
   const [activeTab, setActiveTab] = useState("curriculum");
   const [expandedModules, setExpandedModules] = useState({});
   const [expandedLessons, setExpandedLessons] = useState({});
   const [activePageByLesson, setActivePageByLesson] = useState({});
   const [enrolling, setEnrolling] = useState(false);
+  const [showBatchModal, setShowBatchModal] = useState(false);
+  const [selectedBatch, setSelectedBatch] = useState(null);
+  const [paymentStep, setPaymentStep] = useState(1); // 1: Select Batch, 2: Payment Scanner
 
   // Timer & Mastery State
   const [timerSeconds, setTimerSeconds] = useState(0);
@@ -71,6 +78,13 @@ const CourseDetail = () => {
       return;
     }
 
+    // For Offline courses, open the batch selection modal first
+    if (course.course_mode === "Offline") {
+      setShowBatchModal(true);
+      setPaymentStep(1);
+      return;
+    }
+
     try {
       setEnrolling(true);
       const response = await httpRequest.post(endPoints.CreateUserCourse, {
@@ -79,7 +93,7 @@ const CourseDetail = () => {
       });
 
       dispatch(enrollCourseSuccess(response.data));
-      dispatch(fetchCourseDetail(id)); // Refresh course data to update enrollment status locally
+      dispatch(fetchCourseDetail(id)); 
       toast.success("Welcome to the Studio! Access Granted.");
     } catch (error) {
       toast.error(error.message || "Enrollment failed. Please try again.");
@@ -88,11 +102,20 @@ const CourseDetail = () => {
     }
   };
 
+  const handleConfirmBatch = () => {
+    if (!selectedBatch) {
+      toast.warn("Please select a batch first");
+      return;
+    }
+    setPaymentStep(2);
+  };
+
   const apiBase = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || "http://localhost:5000";
 
   useEffect(() => {
     if (id) {
       dispatch(fetchCourseDetail(id));
+      dispatch(fetchCourses({ page: 1 }));
       window.scrollTo(0, 0);
     }
   }, [id, dispatch]);
@@ -241,7 +264,7 @@ const CourseDetail = () => {
     const totalTime = totalPageSeconds; // Capture current total
     setTimerSeconds(0);
     setIsTimerRunning(false);
-    
+
     // Send total required time to backend to guarantee completion
     await handlePageMastery(true, totalTime, lesson, activePage.id);
 
@@ -413,26 +436,16 @@ const CourseDetail = () => {
                       <h3 className="text-[9px] font-black text-primary uppercase tracking-[0.3em] mb-4 italic">Narrative</h3>
                       <h2 className="text-2xl font-black text-main dark:text-white uppercase italic mb-6 tracking-tight">Executive Summary</h2>
                       <div
-                        className="text-gray-500 dark:text-gray-400 font-medium text-sm leading-relaxed space-y-4 prose max-w-none"
+                        className="text-gray-500 dark:text-gray-400 font-medium text-sm leading-relaxed space-y-4 prose max-w-none mb-12"
                         dangerouslySetInnerHTML={{ __html: course.description || "Initializing narrative..." }}
                       />
-                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      {[
-                        { title: "Industrial Standard", desc: "Master workflows used by specialists." },
-                        { title: "Elite Mentorship", desc: "Guidance from lead architects." }
-                      ].map((feat, i) => (
-                        <div key={i} className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 flex items-start gap-5">
-                          <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-700 flex items-center justify-center text-primary border border-gray-100 dark:border-gray-600">
-                            <MdVerified size={20} />
-                          </div>
-                          <div>
-                            <h4 className="text-base font-black text-main dark:text-white uppercase italic mb-1 tracking-tight">{feat.title}</h4>
-                            <p className="text-gray-500 dark:text-gray-400 font-medium italic text-xs">{feat.desc}</p>
-                          </div>
-                        </div>
-                      ))}
+                      <h3 className="text-[9px] font-black text-primary uppercase tracking-[0.3em] mb-4 italic">Highlights</h3>
+                      <h2 className="text-2xl font-black text-main dark:text-white uppercase italic mb-6 tracking-tight">Course Overview</h2>
+                      <div
+                        className="text-gray-500 dark:text-gray-400 font-medium text-sm leading-relaxed space-y-4 prose max-w-none"
+                        dangerouslySetInnerHTML={{ __html: course.overview || "Loading overview..." }}
+                      />
                     </div>
                   </motion.div>
                 )}
@@ -447,24 +460,76 @@ const CourseDetail = () => {
                     <div className="flex items-center justify-between mb-8 px-2">
                       <div>
                         <h3 className="text-[9px] font-black text-primary uppercase tracking-[0.3em] mb-2 italic">Path</h3>
-                        <h2 className="text-2xl font-black text-main dark:text-white uppercase italic tracking-tight">Curriculum</h2>
+                        <h2 className="text-2xl font-black text-main dark:text-white uppercase italic tracking-tight">
+                          {course.course_mode === "Offline" ? "Batch Schedule" : "Curriculum"}
+                        </h2>
                       </div>
                       <div className="text-right">
                         <p className="text-[9px] font-black uppercase text-gray-400 mb-0.5 italic">Total</p>
-                        <p className="text-lg font-black text-main dark:text-white italic">{course.modules?.reduce((acc, m) => acc + (m.lessons?.length || 0), 0)} Sessions</p>
+                        <p className="text-lg font-black text-main dark:text-white italic">
+                          {course.course_mode === "Offline" 
+                            ? `${course.batches?.length || 0} Batches` 
+                            : `${course.modules?.reduce((acc, m) => acc + (m.lessons?.length || 0), 0)} Sessions`}
+                        </p>
                       </div>
                     </div>
 
-                    <div className="space-y-4">
-                      {course.modules?.map((module, mIdx) => (
-                        <div key={module.id} className="border border-gray-100 dark:border-gray-700 rounded-2xl overflow-hidden bg-white dark:bg-gray-800 hover:border-primary/30 transition-all shadow-sm">
-                          <div
-                            onClick={() => toggleModule(module.id)}
-                            className={clsx(
-                              "w-full flex items-center justify-between p-4 px-6 text-left transition-all cursor-pointer group",
-                              expandedModules[module.id] ? "bg-gray-50/50" : "bg-white"
-                            )}
-                          >
+                    {course.course_mode === "Offline" ? (
+                      <div className="space-y-4">
+                        {course.batches?.length > 0 ? (
+                          course.batches.map((batch, bIdx) => (
+                            <div key={batch.id} className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm hover:border-primary/30 transition-all group">
+                              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                <div className="flex items-center gap-5">
+                                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-black italic text-sm">
+                                    B{bIdx + 1}
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase rounded italic border border-emerald-100">
+                                        {batch.status}
+                                      </span>
+                                      <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">{batch.location || "Studio Center"}</span>
+                                    </div>
+                                    <h4 className="text-base font-black text-main dark:text-white uppercase italic tracking-tight">
+                                      {batch.class_days}
+                                    </h4>
+                                  </div>
+                                </div>
+                                <div className="flex flex-wrap gap-8">
+                                  <div className="text-center md:text-left">
+                                    <p className="text-[8px] font-black text-gray-400 uppercase mb-1 italic">Timing</p>
+                                    <p className="text-xs font-bold text-main dark:text-white">{batch.start_time} - {batch.end_time}</p>
+                                  </div>
+                                  <div className="text-center md:text-left">
+                                    <p className="text-[8px] font-black text-gray-400 uppercase mb-1 italic">Timeline</p>
+                                    <p className="text-xs font-bold text-main dark:text-white">Starts: {batch.start_date}</p>
+                                  </div>
+                                  <div className="text-center md:text-left">
+                                    <p className="text-[8px] font-black text-gray-400 uppercase mb-1 italic">Capacity</p>
+                                    <p className="text-xs font-bold text-main dark:text-white">{batch.seat_limit} Seats</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="p-12 text-center bg-gray-50 dark:bg-gray-800/50 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-700">
+                             <p className="text-gray-400 font-bold italic uppercase text-xs tracking-widest">No Batches Scheduled Yet</p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {course.modules?.map((module, mIdx) => (
+                          <div key={module.id} className="border border-gray-100 dark:border-gray-700 rounded-2xl overflow-hidden bg-white dark:bg-gray-800 hover:border-primary/30 transition-all shadow-sm">
+                            <div
+                              onClick={() => toggleModule(module.id)}
+                              className={clsx(
+                                "w-full flex items-center justify-between p-4 px-6 text-left transition-all cursor-pointer group",
+                                expandedModules[module.id] ? "bg-gray-50/50" : "bg-white"
+                              )}
+                            >
                             <div className="flex items-center gap-4 flex-1">
                               <span className="text-[10px] font-black text-primary italic w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">0{mIdx + 1}</span>
                               <h4 className="text-base font-black text-main uppercase italic tracking-tight">{module.title}</h4>
@@ -536,24 +601,24 @@ const CourseDetail = () => {
                                               {!isLocked && lesson.pages?.length > 0 ? (
                                                 <div className="flex flex-col xl:flex-row min-h-[300px]">
                                                   <div className="w-full xl:w-56 border-r border-gray-50 bg-gray-50/10 p-4 space-y-1.5">
-                                                        {lesson.pages.map((page, pIdx) => {
-                                                          const isPageDone = (completedPages[lesson.id] || []).includes(page.id);
-                                                          const activePageIndex = lesson.pages.findIndex(p => p.id === activePageId);
-                                                          // Unlock if: done, or it's the current active one, or it's the very first page of an unlocked lesson
-                                                          const isFuturePage = activePageIndex !== -1 && pIdx > activePageIndex;
-                                                          const isLockedInSidebar = !isPageDone && isFuturePage;
+                                                    {lesson.pages.map((page, pIdx) => {
+                                                      const isPageDone = (completedPages[lesson.id] || []).includes(page.id);
+                                                      const activePageIndex = lesson.pages.findIndex(p => p.id === activePageId);
+                                                      // Unlock if: done, or it's the current active one, or it's the very first page of an unlocked lesson
+                                                      const isFuturePage = activePageIndex !== -1 && pIdx > activePageIndex;
+                                                      const isLockedInSidebar = !isPageDone && isFuturePage;
 
-                                                          return (
-                                                            <button
-                                                              key={page.id}
-                                                              disabled={isLockedInSidebar}
-                                                              onClick={() => startPageTimer(lesson.id, page)}
-                                                              className={clsx(
-                                                                "w-full text-left p-3 rounded-xl transition-all flex items-center gap-3 relative",
-                                                                activePageId === page.id ? "bg-white shadow-sm border border-gray-100" : "text-gray-400 hover:text-main",
-                                                                isLockedInSidebar && "opacity-50 cursor-not-allowed"
-                                                              )}
-                                                            >
+                                                      return (
+                                                        <button
+                                                          key={page.id}
+                                                          disabled={isLockedInSidebar}
+                                                          onClick={() => startPageTimer(lesson.id, page)}
+                                                          className={clsx(
+                                                            "w-full text-left p-3 rounded-xl transition-all flex items-center gap-3 relative",
+                                                            activePageId === page.id ? "bg-white shadow-sm border border-gray-100" : "text-gray-400 hover:text-main",
+                                                            isLockedInSidebar && "opacity-50 cursor-not-allowed"
+                                                          )}
+                                                        >
                                                           <div className={clsx("w-1.5 h-1.5 rounded-full", activePageId === page.id ? "bg-primary" : isPageDone ? "bg-green-500" : "bg-gray-200")} />
                                                           <div className="flex flex-col flex-1 overflow-hidden">
                                                             <span className="text-[9px] font-black uppercase italic truncate leading-none mb-1">{page.title}</span>
@@ -600,10 +665,10 @@ const CourseDetail = () => {
                                                           return (
                                                             <div className="mt-10 pt-4 border-t border-gray-50 flex items-center justify-between">
                                                               <button disabled={lesson.pages.indexOf(activePage) === 0} onClick={() => { const idx = lesson.pages.indexOf(activePage); startPageTimer(lesson.id, lesson.pages[idx - 1]); }} className="flex items-center gap-2 text-[8px] font-black uppercase text-gray-300 hover:text-primary transition-all disabled:opacity-10"><MdChevronLeft size={16} /> Prev</button>
-                                                              
+
                                                               <div className="flex items-center gap-4">
                                                                 {canSkip && (
-                                                                  <button 
+                                                                  <button
                                                                     onClick={() => handleSkip(lesson, activePage)}
                                                                     className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary text-[8px] font-black uppercase italic rounded-lg hover:bg-primary hover:text-white transition-all shadow-sm"
                                                                   >
@@ -705,8 +770,9 @@ const CourseDetail = () => {
                         </div>
                       ))}
                     </div>
-                  </motion.div>
-                )}
+                  )}
+                </motion.div>
+              )}
 
                 {activeTab === "instructor" && (
                   <motion.div
@@ -751,27 +817,37 @@ const CourseDetail = () => {
 
                   <div className="flex items-baseline gap-2 mb-6 border-b border-gray-50 dark:border-gray-700 pb-4">
                     <span className="text-3xl font-black text-main dark:text-white italic tracking-tight">
-                      {course.access_type === "Free" ? "Free" : `₹${course.fixed_amount || "0"}`}
+                      {course.access_type === "Free" ? "Free" : `₹${parseFloat(course.fixed_amount || 0).toLocaleString()}`}
                     </span>
-                    {course.access_type !== "Free" && <span className="text-sm text-gray-300 line-through font-bold">₹12,499</span>}
+                    {course.access_type !== "Free" && parseFloat(course.discount_amount) > 0 && (
+                      <span className="text-sm text-gray-300 line-through font-bold">
+                        ₹{(parseFloat(course.fixed_amount) + parseFloat(course.discount_amount)).toLocaleString()}
+                      </span>
+                    )}
                   </div>
 
                   <button onClick={handleEnroll} disabled={enrolling} className={clsx("w-full py-3.5 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] transition-all mb-4 italic flex items-center justify-center gap-2", isEnrolled ? "bg-green-500 text-white" : "bg-primary text-white", "hover:-translate-y-0.5 active:scale-95 disabled:opacity-70 shadow-lg shadow-primary/20")}>
-                    {enrolling ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : isEnrolled ? "Continue Training" : "Start Learning"}
+                    {enrolling ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : isEnrolled ? (
+                      course.course_mode === "Offline" ? "Admission Confirmed" : "Continue Training"
+                    ) : (
+                      course.course_mode === "Offline" ? "Reserve Your Spot" : "Start Learning"
+                    )}
                   </button>
 
                   <div className="space-y-3">
-                    <h5 className="text-[8px] font-black text-main dark:text-white uppercase italic border-b border-gray-50 dark:border-gray-700 pb-2">Assets:</h5>
+                    <h5 className="text-[8px] font-black text-main dark:text-white uppercase italic border-b border-gray-50 dark:border-gray-700 pb-2">Course Perks:</h5>
                     {[
-                      { icon: MdPlayCircleOutline, label: "HQ Masterclasses" },
-                      { icon: MdInfoOutline, label: "Industrial Assets" },
-                      { icon: MdStars, label: "Studio Cert" }
+                      { icon: MdVerified, label: "Studio Certified" },
+                      { icon: MdMenuBook, label: "Industrial Workflows" },
+                      { icon: MdPerson, label: "Lead Mentorship" },
                     ].map((feat, i) => (
                       <div key={i} className="flex items-center gap-3 group/feat cursor-default">
-                        <div className="w-7 h-7 rounded-lg bg-gray-50 flex items-center justify-center text-primary group-hover/feat:bg-primary group-hover/feat:text-white transition-all">
-                          <feat.icon size={16} />
+                        <div className="w-7 h-7 rounded-lg bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-primary group-hover/feat:bg-primary group-hover/feat:text-white transition-all border border-gray-100 dark:border-gray-700">
+                          <feat.icon size={14} />
                         </div>
-                        <span className="text-[10px] font-black italic text-gray-600 tracking-tight">{feat.label}</span>
+                        <span className="text-[10px] font-black italic text-gray-600 dark:text-gray-400 tracking-tight">{feat.label}</span>
                       </div>
                     ))}
                   </div>
@@ -782,6 +858,115 @@ const CourseDetail = () => {
           </div>
         </div>
       </section>
+
+      {/* 3. SUGGESTED PROGRAMS */}
+      <section className="bg-white dark:bg-[#050505] py-24 border-t border-gray-50 dark:border-gray-900">
+        <div className="container max-w-full mx-auto px-4 md:px-12">
+          <CourseSlider
+            courses={allCourses.filter(c => c.id !== id)}
+            title="Next Step in Your Journey"
+            subtitle="Explore other mastery programs from our lead architects"
+            viewAllLink="/courses"
+          />
+        </div>
+      </section>
+      
+      <GenericModal
+        showModal={showBatchModal}
+        closeModal={() => setShowBatchModal(false)}
+        modalTitle={paymentStep === 1 ? "Select Your Batch" : "Secure Your Seat"}
+        widthClasses="max-w-xl"
+        modalBody={
+          <div className="space-y-6">
+            {paymentStep === 1 ? (
+              <div className="space-y-4">
+                <p className="text-gray-500 dark:text-gray-400 font-medium italic text-xs mb-4">Choose a schedule that fits your routine. All batches are held at the Studio Center.</p>
+                <div className="grid grid-cols-1 gap-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                  {course.batches?.map((batch) => (
+                    <div
+                      key={batch.id}
+                      onClick={() => setSelectedBatch(batch)}
+                      className={clsx(
+                        "p-5 rounded-2xl border-2 transition-all cursor-pointer group",
+                        selectedBatch?.id === batch.id 
+                          ? "border-primary bg-primary/[0.02] shadow-md shadow-primary/5" 
+                          : "border-gray-100 dark:border-gray-800 hover:border-gray-200"
+                      )}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className={clsx(
+                            "w-10 h-10 rounded-xl flex items-center justify-center font-black italic text-xs transition-all",
+                            selectedBatch?.id === batch.id ? "bg-primary text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-400"
+                          )}>
+                            {batch.status === "active" ? <MdCheckCircle size={18} /> : "..."}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2 mb-0.5">
+                               <h4 className="text-sm font-black text-main dark:text-white uppercase italic tracking-tight">{batch.batch_name}</h4>
+                               <span className="text-[8px] font-bold text-primary uppercase italic bg-primary/5 px-2 rounded">
+                                  {batch.start_time?.slice(0, 5)} - {batch.end_time?.slice(0, 5)}
+                               </span>
+                            </div>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider italic">{batch.class_days}</p>
+                          </div>
+                        </div>
+                        {selectedBatch?.id === batch.id && (
+                          <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white">
+                            <MdCheckCircle size={14} />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  onClick={handleConfirmBatch}
+                  disabled={!selectedBatch}
+                  className="w-full mt-6 py-4 rounded-2xl bg-main text-white font-black text-xs uppercase tracking-[0.2em] italic hover:bg-primary transition-all shadow-lg shadow-main/10 disabled:opacity-50"
+                >
+                  Continue to Payment
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-8">
+                <div className="flex flex-col items-center text-center">
+                  <div className="relative mb-6">
+                    <div className="w-48 h-48 bg-white p-3 rounded-3xl shadow-xl border border-gray-100 flex items-center justify-center relative overflow-hidden">
+                       <div className="absolute inset-0 bg-primary/5 animate-pulse" />
+                       <MdQrCodeScanner size={120} className="text-main/20 relative z-10" />
+                       <div className="absolute inset-4 border-2 border-dashed border-primary/30 rounded-2xl flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm z-20">
+                          <span className="text-[10px] font-black text-primary uppercase italic text-center px-4">Scanner Integration Pending</span>
+                       </div>
+                    </div>
+                    <div className="absolute -bottom-3 -right-3 w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-white shadow-lg border-4 border-white">
+                       <MdQrCodeScanner size={20} />
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-2xl w-full mb-6 text-left">
+                    <div className="flex items-center justify-between mb-2">
+                       <span className="text-[9px] font-black text-gray-400 uppercase italic">Payable Amount</span>
+                       <span className="text-xl font-black text-main dark:text-white italic">₹{course.fixed_amount}</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700">
+                       <span className="text-[10px] font-bold text-gray-500">UPI ID: studio@upi</span>
+                       <button className="text-primary hover:text-main"><MdContentCopy size={16} /></button>
+                    </div>
+                  </div>
+
+                  <div className="w-full space-y-3">
+                     <button className="w-full py-4 rounded-2xl bg-primary text-white font-black text-xs uppercase tracking-[0.2em] italic flex items-center justify-center gap-3 shadow-lg shadow-primary/20 hover:-translate-y-0.5 transition-all">
+                        <MdFileUpload size={18} /> Upload Payment Proof
+                     </button>
+                     <p className="text-[9px] font-bold text-gray-400 uppercase italic tracking-wider">After payment, upload screenshot to verify seat.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        }
+      />
     </div>
   );
 };

@@ -30,8 +30,7 @@ const UserSidebar = () => {
   const menuItems = [
     { name: "Dashboard", path: "/user/dashboard", icon: MdDashboard, badge: null },
     { name: "Courses", path: "/user/courses", icon: MdLibraryBooks, badge: null },
-    { name: "My Courses", path: "/user/my-courses", icon: MdLibraryBooks, badge: null },
-    { name: "Learner Report", path: "/user/report", icon: MdAssessment, badge: null },
+    { name: "Learner Report", path: "/user/my-courses", icon: MdAssessment, badge: null },
     { name: "Claim Your Certificates", path: "/user/certificates", icon: MdVerified, badge: null },
   ];
 

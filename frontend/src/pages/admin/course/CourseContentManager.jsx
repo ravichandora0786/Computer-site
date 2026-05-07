@@ -481,12 +481,44 @@ const CourseContentManager = () => {
                 <button onClick={() => handleOpenBatchModal(batch)} className="p-1.5 rounded-lg bg-white border text-muted hover:text-primary transition-all"><MdEdit size={14} /></button>
                 <button onClick={() => openDeleteModal('batch', batch.id)} className="p-1.5 rounded-lg bg-white border text-muted hover:text-red-500 transition-all"><MdDelete size={14} /></button>
               </div>
-              <h3 className="text-xl font-bold text-main mb-2 tracking-tight">{batch.batch_name}</h3>
-              <div className="space-y-2 text-xs text-muted mb-6">
-                <div className="flex justify-between"><span>Start Date:</span> <span className="font-bold text-main">{batch.start_date?.split('T')[0]}</span></div>
-                <div className="flex justify-between"><span>Location:</span> <span className="font-bold text-main">{batch.location || "On-site"}</span></div>
+              <h3 className="text-xl font-bold text-main mb-3 tracking-tight">{batch.batch_name}</h3>
+              
+              <div className="space-y-3 mb-2">
+                <div className="flex justify-between items-center text-[11px]">
+                  <span className="text-muted uppercase font-bold tracking-wider">Timeline</span>
+                  <span className="font-bold text-main italic">{batch.start_date?.split('T')[0]} → {batch.end_date?.split('T')[0] || 'Ongoing'}</span>
+                </div>
+
+                <div className="flex justify-between items-center text-[11px]">
+                  <span className="text-muted uppercase font-bold tracking-wider">Location</span>
+                  <span className="font-bold text-primary italic">{batch.location || "Main Studio"}</span>
+                </div>
+
+                <div className="flex justify-between items-center text-[11px]">
+                  <span className="text-muted uppercase font-bold tracking-wider">Schedule</span>
+                  <span className="font-bold text-main italic">{batch.class_days || "Not Set"}</span>
+                </div>
+
+                <div className="flex justify-between items-center text-[11px]">
+                  <span className="text-muted uppercase font-bold tracking-wider">Timing</span>
+                  <span className="font-bold text-main italic">{batch.start_time?.slice(0, 5)} - {batch.end_time?.slice(0, 5)}</span>
+                </div>
+
+                <div className="flex justify-between items-center text-[11px]">
+                  <span className="text-muted uppercase font-bold tracking-wider">Seat Limit</span>
+                  <span className="font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{batch.seat_limit || 0} SEATS</span>
+                </div>
               </div>
-              <button className="w-full py-2 rounded-lg border border-border-line text-[10px] font-bold uppercase transition-all">View Applications</button>
+
+              <div className="mt-4 pt-4 border-t border-gray-50 flex justify-between items-center">
+                 <span className={`text-[9px] font-bold px-2 py-1 rounded-md uppercase tracking-widest ${
+                   batch.status === 'active' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
+                   batch.status === 'completed' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
+                   'bg-gray-100 text-gray-500 border border-gray-200'
+                 }`}>
+                   {batch.status}
+                 </span>
+              </div>
             </div>
           ))}
           <button onClick={() => handleOpenBatchModal()} className="border-2 border-dashed border-border-line rounded-xl flex flex-col items-center justify-center p-8 text-muted hover:text-primary transition-all min-h-[200px]">
@@ -515,7 +547,15 @@ const CourseContentManager = () => {
       />
       <TestModal isOpen={isTestModalOpen} onClose={() => setIsTestModalOpen(false)} onSuccess={fetchData} editingItem={editingItem} moduleId={contextIds.moduleId} />
       <QuestionModal isOpen={isQuestionModalOpen} onClose={() => setIsQuestionModalOpen(false)} onSuccess={fetchData} editingItem={editingItem} testId={contextIds.testId} />
-      <BatchModal isOpen={isBatchModalOpen} onClose={() => setIsBatchModalOpen(false)} onSuccess={fetchData} editingItem={editingItem} courseId={courseId} />
+      <BatchModal 
+        isOpen={isBatchModalOpen} 
+        onClose={() => setIsBatchModalOpen(false)} 
+        onSuccess={fetchData} 
+        editingItem={editingItem} 
+        courseId={courseId} 
+        courseStartDate={currentCourse.publish_date}
+        courseEndDate={currentCourse.expire_date}
+      />
 
       <DeleteConfirmationModal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} onConfirm={handleConfirmDelete} title={`Delete ${itemToDelete?.type?.charAt(0).toUpperCase() + itemToDelete?.type?.slice(1) || 'Item'}`} message={`Are you sure you want to delete this ${itemToDelete?.type}?`} />
       

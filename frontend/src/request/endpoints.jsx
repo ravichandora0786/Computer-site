@@ -72,10 +72,12 @@ const endPoints = {
 
   // User Course
   UserCourseList: "/userCourse/list",
+  UserCourseStats: "/userCourse/stats",
   UserCourseById: "/userCourse/getById",
   CreateUserCourse: "/userCourse/create",
   UpdateUserCourse: "/userCourse/update",
   DeleteUserCourse: "/userCourse/delete",
+  UnenrollCourse: "/userCourse/unenroll",
 
   // Gallery
   Gallery: "/gallery",

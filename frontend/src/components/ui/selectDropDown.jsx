@@ -15,23 +15,38 @@ export default function SelectDropDown({
   touched = true,
   isMulti = false,
   onBlur,
+  allowSelectAll = false,
 }) {
   const hasError = !!error;
+
+  const allOption = { label: "Select All", value: "*" };
+  const selectOptions = isMulti && allowSelectAll ? [allOption, ...options] : options;
 
   // Compatibility Layer: Convert primitive string value to {label, value} object
   const getSelectValue = () => {
     if (!value) return null;
     if (isMulti && Array.isArray(value)) {
+      // If all options are selected, we can show 'Select All' as selected too if we want, 
+      // but usually just showing the selected items is fine.
       return options.filter((opt) => value.includes(opt.value));
     }
     return options.find((opt) => opt.value === value) || null;
   };
 
   // Compatibility Layer: Send back primitive value in a fake event object
-  const handleSelectChange = (selected) => {
+  const handleSelectChange = (selected, actionMeta) => {
     let val;
     if (isMulti) {
-      val = selected ? selected.map((s) => s.value) : [];
+      if (selected && selected.some(s => s.value === '*')) {
+        // If Select All is clicked, check if it was already "all" selected
+        if (value && value.length === options.length) {
+           val = []; // Unselect all if already all selected (Toggle logic)
+        } else {
+           val = options.map(o => o.value); // Select all
+        }
+      } else {
+        val = selected ? selected.map((s) => s.value) : [];
+      }
     } else {
       val = selected ? selected.value : "";
     }
@@ -50,13 +65,13 @@ export default function SelectDropDown({
   return (
     <div className="flex flex-col w-full">
       {label && (
-        <label className="text-xs font-bold uppercase text-muted mb-2 block">
+        <label className="text-[10px] font-bold uppercase tracking-widest text-muted mb-1.5 px-1 block">
           {label}
         </label>
       )}
 
       <Select
-        options={options}
+        options={selectOptions}
         placeholder={placeholder}
         isClearable={isClearable}
         isSearchable={isSearchable}
@@ -149,7 +164,7 @@ export default function SelectDropDown({
       />
 
       {hasError && (
-        <div className="mt-1 text-[10px] font-bold text-red-500 uppercase tracking-tight">
+        <div className="mt-1 text-[10px] font-bold text-red-500 uppercase tracking-tight px-1">
           {error}
         </div>
       )}

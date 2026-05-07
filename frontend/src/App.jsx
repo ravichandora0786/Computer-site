@@ -1,5 +1,5 @@
 import React from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import { useSelector, useDispatch } from 'react-redux'
@@ -34,6 +34,7 @@ import AddUpdateCourseCategory from './pages/admin/courseCategory/AddUpdateCours
 import AdminLogin from './pages/admin/auth/Login'
 import TermsList from './pages/admin/terms/TermsList'
 import AddUpdateTerms from './pages/admin/terms/AddUpdateTerms'
+import EnrollmentHistory from './pages/admin/enrollment/EnrollmentHistory'
 import PrivateRoute from './routes/PrivateRoute'
 
 import DashboardLayout from './components/user/DashboardLayout'
@@ -55,6 +56,7 @@ import CoursesPage from './pages/user/courses'
 import CourseDetail from './pages/user/courses/CourseDetail'
 
 function App() {
+  const location = useLocation()
   const isFullScreenLoading = useSelector(selectScreenLoader)
   const { darkMode } = useSelector((state) => state.common)
 
@@ -113,6 +115,7 @@ function App() {
                 <Route path="course-ratings" element={<CourseRatingList />} />
                 <Route path="platform-ratings" element={<PlatformRatingList />} />
                 <Route path="certificates" element={<CertificateRequests />} />
+                <Route path="enrollments" element={<EnrollmentHistory />} />
               </Routes>
             </AdminLayout>
           </PrivateRoute>
@@ -166,7 +169,7 @@ function App() {
         } />
       </Routes>
       <ToastContainer position="bottom-right" />
-      <FloatingActions />
+      { !location.pathname.startsWith('/admin') && <FloatingActions /> }
     </>
   )
 }

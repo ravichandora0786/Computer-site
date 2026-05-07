@@ -1,6 +1,6 @@
 export const USER_STATUS_ENUM = ["active", "inactive"];
 export const COURSE_LEVEL_ENUM = ["beginner", "intermediate", "expert"];
-export const COURSE_STATUS_ENUM = ["draft", "coming soon", "active", "inactive", "archived"];
+export const COURSE_STATUS_ENUM = ["draft", "coming soon", "active", "inactive", "archived", "completed"];
 export const GALLERY_TYPE_ENUM = ["image", "video", "youtube"];
 export const GALLERY_CATEGORY_ENUM = ["building", "students", "classroom", "events", "faculty", "other"];
 export const REQUEST_STATUS_ENUM = ["pending", "solved", "processing"];

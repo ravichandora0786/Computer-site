@@ -7,7 +7,7 @@ import fs from 'fs'
 import { ApiResponse } from '../utils/ApiResponse.js'
 import { ApiError } from '../utils/ApiError.js'
 import { responseMessage } from '../utils/responseMessage.js'
-import { CourseModel, CourseCategoryModel, UserModel, CourseMediaModel, CourseModuleModel, LessonModel, LessonPageModel, UserCourseModel, LessonProgressModel, ModuleTestModel } from '../models/associations.js'
+import { CourseModel, CourseCategoryModel, UserModel, CourseMediaModel, CourseModuleModel, LessonModel, LessonPageModel, UserCourseModel, LessonProgressModel, ModuleTestModel, OfflineBatchModel } from '../models/associations.js'
 
 /** Get all courses with pagination */
 const getCourses = asyncHandler(async (req, res, next) => {
@@ -147,6 +147,7 @@ const getCourseById = asyncHandler(async (req, res, next) => {
           }
         ]
       },
+      { model: OfflineBatchModel, as: 'batches' },
     ],
     order: [
       [{ model: CourseMediaModel, as: 'media' }, 'order_index', 'ASC'],
