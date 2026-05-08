@@ -15,6 +15,7 @@ import {
   MdDescription,
   MdArrowBack,
   MdVisibility,
+  MdInfo
 } from "react-icons/md";
 import {
   getModulesByCourse,
@@ -35,6 +36,7 @@ import LessonPageModal from "./components/LessonPageModal";
 import TestModal from "./components/TestModal";
 import QuestionModal from "./components/QuestionModal";
 import BatchModal from "./components/BatchModal";
+import { formatDate } from "@/utils/commonFunctions";
 
 import PageTitle from "@/components/ui/PageTitle";
 import PrimaryButton from "@/components/ui/button/PrimaryButton";
@@ -386,8 +388,8 @@ const CourseContentManager = () => {
   const currentCourse = courseList.find(c => c.id === courseId) || { title: "Course Content" };
 
   const [expandedModules, setExpandedModules] = useState([]);
-  const isOffline = currentCourse.course_mode === "Offline";
-  const [activeTab, setActiveTab] = useState(isOffline ? "batches" : "curriculum");
+  const deliveryType = currentCourse.delivery_type || "self_paced";
+  const [activeTab, setActiveTab] = useState(deliveryType === "live_batch" ? "batches" : "curriculum");
   const [editingItem, setEditingItem] = useState(null);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -448,14 +450,13 @@ const CourseContentManager = () => {
           </div>
         </div>
         <div className="flex border-t border-border-line bg-gray-50/50">
-          {!isOffline && (
+          {deliveryType === "self_paced" ? (
             <button onClick={() => setActiveTab("curriculum")} className={clsx("px-8 py-3 text-xs font-bold uppercase tracking-widest transition-all border-b-2", activeTab === "curriculum" ? "border-primary text-primary bg-white" : "border-transparent text-muted")}>
-              Online Curriculum
+              Curriculum (Video Content)
             </button>
-          )}
-          {isOffline && (
+          ) : (
             <button onClick={() => setActiveTab("batches")} className={clsx("px-8 py-3 text-xs font-bold uppercase tracking-widest transition-all border-b-2", activeTab === "batches" ? "border-primary text-primary bg-white" : "border-transparent text-muted")}>
-              Offline Batches
+              Batch Schedules (Live Sessions)
             </button>
           )}
         </div>
@@ -486,7 +487,7 @@ const CourseContentManager = () => {
               <div className="space-y-3 mb-2">
                 <div className="flex justify-between items-center text-[11px]">
                   <span className="text-muted uppercase font-bold tracking-wider">Timeline</span>
-                  <span className="font-bold text-main italic">{batch.start_date?.split('T')[0]} → {batch.end_date?.split('T')[0] || 'Ongoing'}</span>
+                  <span className="font-bold text-main italic">{formatDate(batch.start_date)} → {batch.end_date ? formatDate(batch.end_date) : 'Ongoing'}</span>
                 </div>
 
                 <div className="flex justify-between items-center text-[11px]">
@@ -511,13 +512,19 @@ const CourseContentManager = () => {
               </div>
 
               <div className="mt-4 pt-4 border-t border-gray-50 flex justify-between items-center">
-                 <span className={`text-[9px] font-bold px-2 py-1 rounded-md uppercase tracking-widest ${
-                   batch.status === 'active' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
-                   batch.status === 'completed' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
-                   'bg-gray-100 text-gray-500 border border-gray-200'
-                 }`}>
-                   {batch.status}
-                 </span>
+                 {currentCourse.status === 'coming soon' ? (
+                   <span className="text-[9px] font-black px-2 py-1 rounded-md uppercase tracking-widest bg-amber-50 text-amber-600 border border-amber-100 flex items-center gap-1">
+                     <MdInfo size={10} /> Planning (Coming Soon)
+                   </span>
+                 ) : (
+                   <span className={`text-[9px] font-bold px-2 py-1 rounded-md uppercase tracking-widest ${
+                     batch.status === 'active' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
+                     batch.status === 'completed' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
+                     'bg-gray-100 text-gray-500 border border-gray-200'
+                   }`}>
+                     {batch.status}
+                   </span>
+                 )}
               </div>
             </div>
           ))}
@@ -553,8 +560,10 @@ const CourseContentManager = () => {
         onSuccess={fetchData} 
         editingItem={editingItem} 
         courseId={courseId} 
+        courseMode={currentCourse.course_mode}
         courseStartDate={currentCourse.publish_date}
         courseEndDate={currentCourse.expire_date}
+        courseStatus={currentCourse.status}
       />
 
       <DeleteConfirmationModal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} onConfirm={handleConfirmDelete} title={`Delete ${itemToDelete?.type?.charAt(0).toUpperCase() + itemToDelete?.type?.slice(1) || 'Item'}`} message={`Are you sure you want to delete this ${itemToDelete?.type}?`} />

@@ -10,7 +10,7 @@ const RenderFields = ({ fields = [], setFieldValue, values, errors, touched }) =
   return (
     <div className="grid grid-cols-1 gap-4 md:gap-5 md:grid-cols-2">
       {fields.map((field) => {
-        const { name, label, type, placeholder, options, className, disabled, fullWidth, required, isSearchable, isClearable, allowSelectAll, ...rest } = field;
+        const { name, label, type, placeholder, options, className, disabled, fullWidth, required, isSearchable, isClearable, allowSelectAll, onChange, ...rest } = field;
         const isError = touched[name] && errors[name];
 
         const commonClass = clsx(
@@ -34,7 +34,13 @@ const RenderFields = ({ fields = [], setFieldValue, values, errors, touched }) =
                 name={name}
                 options={options}
                 value={values[name]}
-                onChange={(e) => setFieldValue(name, e.target.value)}
+                onChange={(e) => {
+                  if (onChange) {
+                    onChange(e, setFieldValue, values);
+                  } else {
+                    setFieldValue(name, e.target.value);
+                  }
+                }}
                 error={isError ? errors[name] : null}
                 placeholder={placeholder}
                 disabled={disabled}
@@ -47,7 +53,13 @@ const RenderFields = ({ fields = [], setFieldValue, values, errors, touched }) =
                 name={name}
                 options={options}
                 value={values[name]}
-                onChange={(e) => setFieldValue(name, e.target.value)}
+                onChange={(e) => {
+                  if (onChange) {
+                    onChange(e, setFieldValue, values);
+                  } else {
+                    setFieldValue(name, e.target.value);
+                  }
+                }}
                 error={isError ? errors[name] : null}
                 placeholder={placeholder}
                 disabled={disabled}
@@ -100,6 +112,13 @@ const RenderFields = ({ fields = [], setFieldValue, values, errors, touched }) =
                 className={commonClass}
                 placeholder={placeholder}
                 disabled={disabled}
+                onChange={(e) => {
+                  if (onChange) {
+                    onChange(e, setFieldValue, values);
+                  } else {
+                    setFieldValue(name, e.target.value);
+                  }
+                }}
                 {...rest}
               />
             )}

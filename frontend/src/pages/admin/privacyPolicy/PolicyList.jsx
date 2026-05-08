@@ -12,6 +12,7 @@ import endPoints from "../../../request/endpoints";
 import ConfirmationModal from "@/components/ui/modal/ConfirmationModal";
 import DeleteConfirmationModal from "@/components/ui/modal/deleteConfirmation";
 import ActionIcon from "@/components/ui/ActionIcon";
+import { formatDate } from "@/utils/commonFunctions";
 
 const PolicyList = () => {
   const dispatch = useDispatch();
@@ -81,7 +82,11 @@ const PolicyList = () => {
         />
       )
     },
-    { header: "Last Updated", accessorKey: "updatedAt", cell: ({ getValue }) => new Date(getValue()).toLocaleDateString() },
+    { 
+      header: "Last Updated", 
+      accessorKey: "updatedAt", 
+      cell: ({ getValue }) => formatDate(getValue())
+    },
     {
       header: "Actions",
       id: "actions",

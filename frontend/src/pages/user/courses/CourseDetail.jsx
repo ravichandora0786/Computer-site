@@ -17,6 +17,7 @@ import { toast } from "react-toastify";
 import clsx from "clsx";
 import CourseSlider from "@/components/user/CourseSlider";
 import GenericModal from "@/components/ui/GenericModal";
+import { formatDate } from "@/utils/commonFunctions";
 
 const CourseDetail = () => {
   const { id } = useParams();
@@ -68,6 +69,11 @@ const CourseDetail = () => {
   const isEnrolled = course?.isEnrolled;
 
   const handleEnroll = async () => {
+    if (course.status === 'coming soon') {
+      toast.info("This course is arriving soon! Stay tuned.");
+      return;
+    }
+
     if (!isAuthenticated) {
       dispatch(openLoginModal());
       return;
@@ -330,6 +336,14 @@ const CourseDetail = () => {
                   <span className="px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-white text-[8px] font-black uppercase tracking-[0.2em] italic">
                     Studio Edition
                   </span>
+                  {course.status === 'coming soon' && (
+                    <>
+                      <div className="h-1 w-1 rounded-full bg-white/40" />
+                      <span className="px-4 py-1.5 rounded-full bg-amber-500 text-white text-[8px] font-black uppercase tracking-[0.2em] italic animate-pulse">
+                        Coming Soon
+                      </span>
+                    </>
+                  )}
                 </div>
 
                 <motion.h1
@@ -360,7 +374,10 @@ const CourseDetail = () => {
                       <p className="text-[7px] font-black uppercase tracking-[0.2em] text-gray-500 mb-0.5 italic">Duration</p>
                       <p className="text-base font-black text-white italic">
                         {(() => {
-                          if (course.course_mode === 'Offline') {
+                          if (course.course_mode === 'Offline' || course.course_mode === 'Hybrid') {
+                            if (course.batch_duration_weeks > 0) {
+                              return `${course.batch_duration_weeks} Weeks`;
+                            }
                             if (course.publish_date && course.expire_date) {
                               const start = new Date(course.publish_date);
                               const end = new Date(course.expire_date);
@@ -415,7 +432,9 @@ const CourseDetail = () => {
                       : "text-gray-400 hover:text-main dark:hover:text-white"
                   )}
                 >
-                  {tab}
+                  {tab === "curriculum" 
+                    ? (course.delivery_type === "live_batch" ? "Schedule" : "Curriculum") 
+                    : tab}
                 </button>
               ))}
             </div>
@@ -461,20 +480,20 @@ const CourseDetail = () => {
                       <div>
                         <h3 className="text-[9px] font-black text-primary uppercase tracking-[0.3em] mb-2 italic">Path</h3>
                         <h2 className="text-2xl font-black text-main dark:text-white uppercase italic tracking-tight">
-                          {course.course_mode === "Offline" ? "Batch Schedule" : "Curriculum"}
+                          {course.delivery_type === "live_batch" ? "Batch Schedule" : "Curriculum"}
                         </h2>
                       </div>
                       <div className="text-right">
                         <p className="text-[9px] font-black uppercase text-gray-400 mb-0.5 italic">Total</p>
                         <p className="text-lg font-black text-main dark:text-white italic">
-                          {course.course_mode === "Offline" 
+                          {course.delivery_type === "live_batch" 
                             ? `${course.batches?.length || 0} Batches` 
                             : `${course.modules?.reduce((acc, m) => acc + (m.lessons?.length || 0), 0)} Sessions`}
                         </p>
                       </div>
                     </div>
 
-                    {course.course_mode === "Offline" ? (
+                    {course.delivery_type === "live_batch" ? (
                       <div className="space-y-4">
                         {course.batches?.length > 0 ? (
                           course.batches.map((batch, bIdx) => (
@@ -486,9 +505,20 @@ const CourseDetail = () => {
                                   </div>
                                   <div>
                                     <div className="flex items-center gap-2 mb-1">
-                                      <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase rounded italic border border-emerald-100">
-                                        {batch.status}
-                                      </span>
+                                      {course.status === 'coming soon' ? (
+                                        <span className="px-2 py-0.5 bg-amber-50 text-amber-600 text-[8px] font-black uppercase rounded italic border border-amber-100">
+                                          Planning
+                                        </span>
+                                      ) : (
+                                        <span className={clsx(
+                                          "px-2 py-0.5 text-[8px] font-black uppercase rounded italic border",
+                                          batch.status === 'active' 
+                                            ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
+                                            : "bg-red-50 text-red-600 border-red-100"
+                                        )}>
+                                          {batch.status}
+                                        </span>
+                                      )}
                                       <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">{batch.location || "Studio Center"}</span>
                                     </div>
                                     <h4 className="text-base font-black text-main dark:text-white uppercase italic tracking-tight">
@@ -503,7 +533,7 @@ const CourseDetail = () => {
                                   </div>
                                   <div className="text-center md:text-left">
                                     <p className="text-[8px] font-black text-gray-400 uppercase mb-1 italic">Timeline</p>
-                                    <p className="text-xs font-bold text-main dark:text-white">Starts: {batch.start_date}</p>
+                                    <p className="text-xs font-bold text-main dark:text-white">Starts: {formatDate(batch.start_date)}</p>
                                   </div>
                                   <div className="text-center md:text-left">
                                     <p className="text-[8px] font-black text-gray-400 uppercase mb-1 italic">Capacity</p>
@@ -514,8 +544,20 @@ const CourseDetail = () => {
                             </div>
                           ))
                         ) : (
-                          <div className="p-12 text-center bg-gray-50 dark:bg-gray-800/50 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-700">
-                             <p className="text-gray-400 font-bold italic uppercase text-xs tracking-widest">No Batches Scheduled Yet</p>
+                          <div className="p-16 text-center bg-amber-50/30 dark:bg-amber-900/10 rounded-3xl border-2 border-dashed border-amber-200 dark:border-amber-900/30 flex flex-col items-center justify-center gap-4">
+                             <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center text-amber-600">
+                                <MdInfoOutline size={32} />
+                             </div>
+                             <div>
+                                <p className="text-amber-800 dark:text-amber-400 font-black italic uppercase text-sm tracking-widest mb-1">
+                                  {course.status === 'coming soon' ? "Architectural Planning in Progress" : "No Batches Scheduled Yet"}
+                                </p>
+                                <p className="text-amber-600/60 dark:text-amber-400/40 text-[10px] font-bold uppercase tracking-tight">
+                                  {course.status === 'coming soon' 
+                                    ? "This program is currently being finalized in our studio. Launch dates will be announced shortly." 
+                                    : "Check back later for new session announcements."}
+                                </p>
+                             </div>
                           </div>
                         )}
                       </div>
@@ -826,15 +868,24 @@ const CourseDetail = () => {
                     )}
                   </div>
 
-                  <button onClick={handleEnroll} disabled={enrolling} className={clsx("w-full py-3.5 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] transition-all mb-4 italic flex items-center justify-center gap-2", isEnrolled ? "bg-green-500 text-white" : "bg-primary text-white", "hover:-translate-y-0.5 active:scale-95 disabled:opacity-70 shadow-lg shadow-primary/20")}>
-                    {enrolling ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : isEnrolled ? (
-                      course.course_mode === "Offline" ? "Admission Confirmed" : "Continue Training"
-                    ) : (
-                      course.course_mode === "Offline" ? "Reserve Your Spot" : "Start Learning"
-                    )}
-                  </button>
+                  {course.status === 'coming soon' ? (
+                    <button 
+                      className="w-full py-3.5 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] transition-all mb-4 italic flex items-center justify-center gap-2 bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed border border-gray-200 dark:border-gray-700 shadow-none"
+                      disabled
+                    >
+                      <MdInfoOutline size={16} /> Coming Soon
+                    </button>
+                  ) : (
+                    <button onClick={handleEnroll} disabled={enrolling} className={clsx("w-full py-3.5 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] transition-all mb-4 italic flex items-center justify-center gap-2", isEnrolled ? "bg-green-500 text-white" : "bg-primary text-white", "hover:-translate-y-0.5 active:scale-95 disabled:opacity-70 shadow-lg shadow-primary/20")}>
+                      {enrolling ? (
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : isEnrolled ? (
+                        course.course_mode === "Offline" ? "Admission Confirmed" : "Continue Training"
+                      ) : (
+                        course.course_mode === "Offline" ? "Reserve Your Spot" : "Start Learning"
+                      )}
+                    </button>
+                  )}
 
                   <div className="space-y-3">
                     <h5 className="text-[8px] font-black text-main dark:text-white uppercase italic border-b border-gray-50 dark:border-gray-700 pb-2">Course Perks:</h5>
@@ -882,43 +933,53 @@ const CourseDetail = () => {
               <div className="space-y-4">
                 <p className="text-gray-500 dark:text-gray-400 font-medium italic text-xs mb-4">Choose a schedule that fits your routine. All batches are held at the Studio Center.</p>
                 <div className="grid grid-cols-1 gap-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                  {course.batches?.map((batch) => (
-                    <div
-                      key={batch.id}
-                      onClick={() => setSelectedBatch(batch)}
-                      className={clsx(
-                        "p-5 rounded-2xl border-2 transition-all cursor-pointer group",
-                        selectedBatch?.id === batch.id 
-                          ? "border-primary bg-primary/[0.02] shadow-md shadow-primary/5" 
-                          : "border-gray-100 dark:border-gray-800 hover:border-gray-200"
-                      )}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className={clsx(
-                            "w-10 h-10 rounded-xl flex items-center justify-center font-black italic text-xs transition-all",
-                            selectedBatch?.id === batch.id ? "bg-primary text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-400"
-                          )}>
-                            {batch.status === "active" ? <MdCheckCircle size={18} /> : "..."}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2 mb-0.5">
-                               <h4 className="text-sm font-black text-main dark:text-white uppercase italic tracking-tight">{batch.batch_name}</h4>
-                               <span className="text-[8px] font-bold text-primary uppercase italic bg-primary/5 px-2 rounded">
-                                  {batch.start_time?.slice(0, 5)} - {batch.end_time?.slice(0, 5)}
-                               </span>
-                            </div>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider italic">{batch.class_days}</p>
-                          </div>
-                        </div>
-                        {selectedBatch?.id === batch.id && (
-                          <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white">
-                            <MdCheckCircle size={14} />
-                          </div>
+                  {course.batches?.map((batch) => {
+                    const isActive = batch.status === "active";
+                    return (
+                      <div
+                        key={batch.id}
+                        onClick={() => isActive && setSelectedBatch(batch)}
+                        className={clsx(
+                          "p-5 rounded-2xl border-2 transition-all group relative",
+                          !isActive ? "opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-800/30 border-gray-100" : 
+                          selectedBatch?.id === batch.id 
+                            ? "border-primary bg-primary/[0.02] shadow-md shadow-primary/5 cursor-pointer" 
+                            : "border-gray-100 dark:border-gray-800 hover:border-gray-200 cursor-pointer"
                         )}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className={clsx(
+                              "w-10 h-10 rounded-xl flex items-center justify-center font-black italic text-xs transition-all",
+                              !isActive ? "bg-gray-200 text-gray-400" :
+                              selectedBatch?.id === batch.id ? "bg-primary text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-400"
+                            )}>
+                              {isActive ? (selectedBatch?.id === batch.id ? <MdCheckCircle size={18} /> : "✓") : "×"}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2 mb-0.5">
+                                 <h4 className="text-sm font-black text-main dark:text-white uppercase italic tracking-tight">{batch.batch_name}</h4>
+                                 {!isActive && (
+                                   <span className="text-[7px] font-black text-red-500 uppercase px-1.5 py-0.5 bg-red-50 rounded">Closed</span>
+                                 )}
+                                 {isActive && (
+                                   <span className="text-[8px] font-bold text-primary uppercase italic bg-primary/5 px-2 rounded">
+                                      {batch.start_time?.slice(0, 5)} - {batch.end_time?.slice(0, 5)}
+                                   </span>
+                                 )}
+                              </div>
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider italic">{batch.class_days}</p>
+                            </div>
+                          </div>
+                          {selectedBatch?.id === batch.id && isActive && (
+                            <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white">
+                              <MdCheckCircle size={14} />
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 <button
                   onClick={handleConfirmBatch}

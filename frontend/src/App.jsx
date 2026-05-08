@@ -10,8 +10,6 @@ import { selectScreenLoader } from './pages/admin/common/selector'
 // Layouts and Pages
 import AdminLayout from './components/admin/AdminLayout'
 import AdminDashboard from './pages/admin/AdminDashboard'
-import OfflineBatchList from "./pages/admin/offlineBatch/OfflineBatchList";
-import AddUpdateOfflineBatch from "./pages/admin/offlineBatch/AddUpdateOfflineBatch";
 
 // New Admin Imports
 import FAQList from "./pages/admin/faq/FAQList";
@@ -95,9 +93,6 @@ function App() {
                 <Route path="/terms/add" element={<AddUpdateTerms />} />
                 <Route path="/terms/edit/:id" element={<AddUpdateTerms />} />
 
-                <Route path="batches" element={<OfflineBatchList />} />
-                <Route path="batches/add" element={<AddUpdateOfflineBatch />} />
-                <Route path="batches/edit/:id" element={<AddUpdateOfflineBatch />} />
 
                 {/* Support & Legal */}
                 <Route path="faqs" element={<FAQList />} />

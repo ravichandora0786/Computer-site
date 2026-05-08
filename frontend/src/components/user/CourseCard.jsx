@@ -13,7 +13,12 @@ const CourseCard = ({ course }) => {
   const isEnrolled = course.isEnrolled;
 
   const calculateDuration = () => {
-    if (course.course_mode === 'Offline') {
+    // For Offline/Hybrid courses, we prefer showing the batch duration in weeks
+    if (course.course_mode === 'Offline' || course.course_mode === 'Hybrid') {
+      if (course.batch_duration_weeks > 0) {
+        return `${course.batch_duration_weeks} weeks`;
+      }
+      // Fallback to legacy date calculation if needed
       if (course.publish_date && course.expire_date) {
         const start = new Date(course.publish_date);
         const end = new Date(course.expire_date);
@@ -23,6 +28,7 @@ const CourseCard = ({ course }) => {
       }
       return "TBD";
     } else {
+      // For Online courses, show total minutes/hours of recorded content
       const totalMin = parseFloat(course.total_duration_min || 0);
       if (totalMin < 1 && totalMin > 0) {
         return `${Math.round(totalMin * 60)} secs`;
@@ -92,6 +98,15 @@ const CourseCard = ({ course }) => {
             <span className="text-[8px] font-black uppercase tracking-widest text-gray-800 dark:text-white -rotate-45">Certificate</span>
         </div>
 
+        {/* Coming Soon Badge */}
+        {course.status === 'coming soon' && (
+          <div className="absolute top-4 left-4 z-20">
+            <span className="px-3 py-1 bg-amber-500 text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-lg flex items-center gap-1">
+              <MdInfo size={12} /> Coming Soon
+            </span>
+          </div>
+        )}
+
         {/* Overlay on Hover */}
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center">
              <Link 
@@ -118,7 +133,7 @@ const CourseCard = ({ course }) => {
           </div>
           <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
             <MdPeople size={16} />
-            <span className="text-xs font-bold">{course.total_reviews ? (course.total_reviews * 123).toLocaleString() : '12,450'} learners</span>
+            <span className="text-xs font-bold">{(course.total_learners || 0).toLocaleString()} learners</span>
           </div>
         </div>
 
@@ -195,12 +210,19 @@ const CourseCard = ({ course }) => {
           >
             <MdInfo size={16} className="flex-shrink-0" /> More Info
           </Link>
-          <Link
-            to={`/course-detail/${course.id}`}
-            className="flex-[1.5] py-3 px-2 rounded-xl bg-[#00966b] text-white text-[10px] font-black uppercase tracking-wider hover:bg-[#007a57] transition-all shadow-lg shadow-emerald-500/20 text-center flex items-center justify-center gap-2 whitespace-nowrap"
-          >
-            <span className="truncate">{isEnrolled ? "Continue" : "Start Learning"}</span> <MdPlayArrow size={16} className="flex-shrink-0" />
-          </Link>
+          
+          {course.status === 'coming soon' ? (
+            <div className="flex-[1.5] py-3 px-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-400 text-[10px] font-black uppercase tracking-wider text-center flex items-center justify-center gap-2 cursor-not-allowed">
+              <span>Coming Soon</span>
+            </div>
+          ) : (
+            <Link
+              to={`/course-detail/${course.id}`}
+              className="flex-[1.5] py-3 px-2 rounded-xl bg-[#00966b] text-white text-[10px] font-black uppercase tracking-wider hover:bg-[#007a57] transition-all shadow-lg shadow-emerald-500/20 text-center flex items-center justify-center gap-2 whitespace-nowrap"
+            >
+              <span className="truncate">{isEnrolled ? "Continue" : "Start Learning"}</span> <MdPlayArrow size={16} className="flex-shrink-0" />
+            </Link>
+          )}
         </div>
       </div>
     </motion.div>

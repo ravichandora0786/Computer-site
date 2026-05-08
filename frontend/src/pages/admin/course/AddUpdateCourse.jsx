@@ -39,6 +39,7 @@ const AddUpdateCourse = () => {
     discount_amount: 0,
     discount_percentage: 0,
     overview: "",
+    delivery_type: "self_paced",
   });
 
   const [categories, setCategories] = useState([]);
@@ -112,6 +113,7 @@ const AddUpdateCourse = () => {
           discount_amount: data.discount_amount || 0,
           discount_percentage: data.discount_percentage || 0,
           overview: data.overview || "",
+          delivery_type: data.delivery_type || "self_paced",
         });
       }
     } catch (error) {
@@ -122,26 +124,40 @@ const AddUpdateCourse = () => {
   };
 
   const validationSchema = Yup.object().shape({
+    title: Yup.string().required("Course title is required"),
     course_category_id: Yup.string().required("Category is required"),
     author: Yup.string().required("Author is required"),
     course_level: Yup.string().required("Level is required"),
     course_mode: Yup.string().required("Course mode is required"),
-    publish_date: Yup.string().when("course_mode", {
-      is: "Offline",
-      then: (schema) => schema.required("Launch date is required for offline courses"),
-      otherwise: (schema) => schema.nullable(),
-    }),
-    expire_date: Yup.string().when("course_mode", {
-      is: "Offline",
-      then: (schema) => schema.required("Archiving date is required for offline courses"),
-      otherwise: (schema) => schema.nullable(),
-    }),
+    delivery_type: Yup.string().required("Content format is required"),
     access_type: Yup.string().required("Access type is required"),
-    monthly_amount: Yup.number().min(0, "Amount must be positive"),
-    yearly_amount: Yup.number().min(0, "Amount must be positive"),
-    fixed_amount: Yup.number().min(0, "Amount must be positive"),
-    discount_amount: Yup.number().min(0, "Discount must be positive"),
-    discount_percentage: Yup.number().min(0).max(100, "Invalid percentage"),
+    
+    // Pricing Validation based on Access Type
+    fixed_amount: Yup.number().when("access_type", {
+      is: "Paid",
+      then: (schema) => schema.min(1, "Price must be at least 1").required("Price is required for paid courses"),
+      otherwise: (schema) => schema.nullable()
+    }),
+    
+    monthly_amount: Yup.number().when("access_type", {
+      is: "Subscription",
+      then: (schema) => schema.test("is-subscription", "Either monthly or yearly fee is required", function(value) {
+        const { yearly_amount } = this.parent;
+        return value > 0 || yearly_amount > 0;
+      }),
+      otherwise: (schema) => schema.nullable()
+    }),
+
+    discount_amount: Yup.number().min(0, "Discount cannot be negative").test(
+      "discount-limit",
+      "Discount cannot exceed base price",
+      function(value) {
+        const { fixed_amount, monthly_amount } = this.parent;
+        const basePrice = fixed_amount || monthly_amount || 0;
+        return value <= basePrice;
+      }
+    ),
+    discount_percentage: Yup.number().min(0, "Min 0%").max(100, "Max 100%"),
   });
 
   const fields = useMemo(() => [
@@ -189,22 +205,52 @@ const AddUpdateCourse = () => {
       ]
     },
     {
+      name: "delivery_type",
+      label: "Content Format",
+      type: "select",
+      options: [
+        { label: "Video Lessons (Self-Paced Content)", value: "self_paced" },
+        { label: "Live Interactive (Batch Based)", value: "live_batch" },
+      ],
+      required: true,
+      onChange: (e, setFieldValue) => {
+        const val = e.target.value;
+        setFieldValue("delivery_type", val);
+        // If switched to Video Lessons, force mode to Online
+        if (val === "self_paced") {
+          setFieldValue("course_mode", "Online");
+        }
+      }
+    },
+    {
       name: "access_type",
       label: "Commercial Model",
       type: "select",
       options: [
         { label: "Free Access", value: "Free" },
-        { label: "Paid Access", value: "Paid" },
+        { label: "Paid Access (One-time)", value: "Paid" },
+        { label: "Subscription Based", value: "Subscription" },
       ],
-      required: true
+      required: true,
+      onChange: (e, setFieldValue) => {
+        const val = e.target.value;
+        setFieldValue("access_type", val);
+        // Reset all pricing fields
+        setFieldValue("monthly_amount", 0);
+        setFieldValue("yearly_amount", 0);
+        setFieldValue("fixed_amount", 0);
+        setFieldValue("discount_amount", 0);
+        setFieldValue("discount_percentage", 0);
+      }
     },
     {
       name: "course_mode",
       label: "Delivery Mode",
       type: "select",
       options: [
-        { label: "Online", value: "Online" },
-        { label: "Offline", value: "Offline" },
+        { label: "Online (Standard)", value: "Online" },
+        { label: "Offline (Studio Center)", value: "Offline" },
+        { label: "Hybrid (Blended Learning)", value: "Hybrid" },
       ],
       required: true
     },
@@ -212,9 +258,74 @@ const AddUpdateCourse = () => {
     { name: "expire_date", label: "Archiving Date", type: "date" },
     { name: "monthly_amount", label: "Monthly Subs ($)", type: "number", placeholder: "0.00" },
     { name: "yearly_amount", label: "Yearly Subs ($)", type: "number", placeholder: "0.00" },
-    { name: "fixed_amount", label: "One-time Purchase ($)", type: "number", placeholder: "0.00" },
-    { name: "discount_amount", label: "Discount Amount ($)", type: "number", placeholder: "0.00" },
-    { name: "discount_percentage", label: "Studio Discount (%)", type: "number", placeholder: "0.00", fullWidth: true },
+    { 
+      name: "fixed_amount", 
+      label: "One-time Purchase ($)", 
+      type: "number", 
+      placeholder: "0.00",
+      onChange: (e, setFieldValue, values) => {
+        const rawVal = e.target.value;
+        setFieldValue("fixed_amount", rawVal);
+        
+        const num = parseFloat(rawVal);
+        if (!isNaN(num) || rawVal === "") {
+          // Reset discounts when base price changes or is cleared
+          setFieldValue("discount_amount", 0);
+          setFieldValue("discount_percentage", 0);
+        }
+      }
+    },
+    { 
+      name: "discount_amount", 
+      label: "Discount Amount ($)", 
+      type: "number", 
+      placeholder: "0.00",
+      onChange: (e, setFieldValue, values) => {
+        const rawVal = e.target.value;
+        setFieldValue("discount_amount", rawVal);
+        
+        const num = parseFloat(rawVal);
+        if (!isNaN(num) && rawVal !== "") {
+          const basePrice = parseFloat(values.fixed_amount || values.monthly_amount || 0);
+          if (basePrice > 0) {
+            const percent = ((num / basePrice) * 100).toFixed(2);
+            setFieldValue("discount_percentage", percent);
+          }
+        } else if (rawVal === "") {
+          setFieldValue("discount_percentage", 0);
+        }
+      }
+    },
+    { 
+      name: "discount_percentage", 
+      label: "Studio Discount (%)", 
+      type: "number", 
+      placeholder: "0.00", 
+      fullWidth: true,
+      onChange: (e, setFieldValue, values) => {
+        const rawVal = e.target.value;
+        setFieldValue("discount_percentage", rawVal);
+        
+        const num = parseFloat(rawVal);
+        if (!isNaN(num) && rawVal !== "") {
+          let percent = num;
+          if (percent < 0) percent = 0;
+          if (percent > 100) percent = 100;
+          
+          if (percent !== num) {
+            setFieldValue("discount_percentage", percent);
+          }
+
+          const basePrice = parseFloat(values.fixed_amount || values.monthly_amount || 0);
+          if (basePrice > 0) {
+            const discAmt = ((percent / 100) * basePrice).toFixed(2);
+            setFieldValue("discount_amount", discAmt);
+          }
+        } else if (rawVal === "") {
+          setFieldValue("discount_amount", 0);
+        }
+      }
+    },
   ], [categories, teachers]);
 
   const getMediaUrl = (url) => {
@@ -236,20 +347,52 @@ const AddUpdateCourse = () => {
     return finalUrl;
   };
 
-  const generalFields = useMemo(() => fields.slice(0, 9), [fields]);
+  const generalFields = useMemo(() => fields.slice(0, 10), [fields]);
   
-  const getPricingFields = (accessType, courseMode) => {
-    const pFields = fields.slice(9); // Starts from publish_date
-    
-    // Dates are always relevant for the timeline section, but only mandatory if Offline
-    const dateFields = courseMode === 'Offline' ? [pFields[0], pFields[1]] : [];
-    
-    if (accessType === 'Free') {
-      return [...dateFields];
+  const getPricingFields = (accessType, courseMode, deliveryType, sourceFields = fields) => {
+    const pubField = sourceFields.find(f => f.name === "publish_date");
+    const expField = sourceFields.find(f => f.name === "expire_date");
+    const monField = sourceFields.find(f => f.name === "monthly_amount");
+    const yearField = sourceFields.find(f => f.name === "yearly_amount");
+    const fixedField = sourceFields.find(f => f.name === "fixed_amount");
+    const discAmtField = sourceFields.find(f => f.name === "discount_amount");
+    const discPctField = sourceFields.find(f => f.name === "discount_percentage");
+
+    // For Batch-based courses, the timeline (Start/End) is in the Batch itself, not the course.
+    // For Free Video Lessons, there's usually no end date.
+    let timelineFields = [];
+    if (deliveryType !== "live_batch") {
+      if (accessType === "Free") {
+        timelineFields = [pubField].filter(Boolean); // Only Launch Date
+      } else {
+        timelineFields = [pubField, expField].filter(Boolean); // Both for Paid/Sub
+      }
     }
     
-    // For Paid, add amounts
-    return [...dateFields, ...pFields.slice(2)];
+    if (accessType === 'Free') {
+      return [...timelineFields];
+    }
+    
+    if (accessType === 'Subscription') {
+      return [
+        ...timelineFields,
+        monField,
+        yearField,
+        discAmtField,
+        discPctField
+      ].filter(Boolean);
+    }
+    
+    if (accessType === 'Paid') {
+      return [
+        ...timelineFields,
+        fixedField,
+        discAmtField,
+        discPctField
+      ].filter(Boolean);
+    }
+    
+    return [...timelineFields];
   };
 
   const handleSubmit = async (values, { setSubmitting }) => {
@@ -405,27 +548,50 @@ const AddUpdateCourse = () => {
           validationSchema={validationSchema}
           onSubmit={handleSubmit}
         >
-          {({ setFieldValue, values, errors, touched, isSubmitting }) => (
-            <Form className="flex flex-col gap-8">
-              {activeTab === "general" && (
-                <RenderFields
-                  fields={generalFields}
-                  setFieldValue={setFieldValue}
-                  values={values}
-                  errors={errors}
-                  touched={touched}
-                />
-              )}
+          {({ setFieldValue, values, errors, touched, isSubmitting }) => {
+            // Dynamic filtering of fields
+            const dynamicFields = fields.map(f => {
+              if (f.name === "course_mode") {
+                const isSelfPaced = values.delivery_type === "self_paced";
+                return {
+                  ...f,
+                  disabled: isSelfPaced,
+                  options: isSelfPaced 
+                    ? [{ label: "Online (Recorded Content)", value: "Online" }]
+                    : [
+                        { label: "Online (Live Cohort)", value: "Online" },
+                        { label: "Offline (Studio Center)", value: "Offline" },
+                        { label: "Hybrid (Blended Learning)", value: "Hybrid" },
+                      ]
+                };
+              }
+              return f;
+            });
 
-              {activeTab === "pricing" && (
-                <RenderFields
-                  fields={getPricingFields(values.access_type, values.course_mode)}
-                  setFieldValue={setFieldValue}
-                  values={values}
-                  errors={errors}
-                  touched={touched}
-                />
-              )}
+            const currentGeneralFields = dynamicFields.slice(0, 10);
+            const currentPricingFields = getPricingFields(values.access_type, values.course_mode, values.delivery_type, dynamicFields);
+
+            return (
+              <Form className="flex flex-col gap-8">
+                {activeTab === "general" && (
+                  <RenderFields
+                    fields={currentGeneralFields}
+                    setFieldValue={setFieldValue}
+                    values={values}
+                    errors={errors}
+                    touched={touched}
+                  />
+                )}
+
+                {activeTab === "pricing" && (
+                  <RenderFields
+                    fields={currentPricingFields}
+                    setFieldValue={setFieldValue}
+                    values={values}
+                    errors={errors}
+                    touched={touched}
+                  />
+                )}
 
               {/* Media Manager Section */}
               {activeTab === "media" && (
@@ -569,7 +735,7 @@ const AddUpdateCourse = () => {
                 </LoadingButton>
               </div>
             </Form>
-          )}
+          )}}
         </Formik>
       </div>
       {/* Studio Media Preview Modal */}

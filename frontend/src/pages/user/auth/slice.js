@@ -1,4 +1,6 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, createAction } from "@reduxjs/toolkit";
+
+const logoutApp = createAction("COMMON/LOGOUT");
 
 const initialState = {
   user: null,
@@ -72,6 +74,7 @@ const userAuthSlice = createSlice({
       state.user = null;
       state.isAuthenticated = false;
       state.token = null;
+      state.dashboardStats = null;
     },
     clearAuthError: (state) => {
       state.error = null;
@@ -89,7 +92,15 @@ const userAuthSlice = createSlice({
     },
     setDashboardStats: (state, action) => {
       state.dashboardStats = action.payload;
+    },
+    fetchDashboardStatsRequest: (state) => {
+      // Trigger for saga
     }
+  },
+  extraReducers: (builder) => {
+    builder.addCase(logoutApp, () => {
+      return initialState;
+    });
   },
 });
 

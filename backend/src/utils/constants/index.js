@@ -7,8 +7,8 @@ export const REQUEST_STATUS_ENUM = ["pending", "solved", "processing"];
 export const ORDER_STATUS_ENUM = ["active", "complete", "pending"];
 export const USER_TYPE_ENUM = ["admin", "student", "teacher"];
 export const COURSE_TYPE_ENUM = ["Free", "Paid"];
-export const ACCESS_TYPE_ENUM = ["Free", "Paid"];
-export const COURSE_MODE_ENUM = ["Online", "Offline"];
+export const ACCESS_TYPE_ENUM = ["Free", "Paid", "Subscription"];
+export const COURSE_MODE_ENUM = ["Online", "Offline", "Hybrid"];
 export const CONTENT_TYPE_ENUM = ["text", "video", "pdf", "image", "link"];
 export const QUESTION_TYPE_ENUM = ["single_choice", "multiple_choice", "true_false", "short_answer"];
 

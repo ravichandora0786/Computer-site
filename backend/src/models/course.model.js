@@ -36,6 +36,10 @@ const CourseModel = sequelize.define(
       allowNull: false,
       defaultValue: 'Online',
     },
+    delivery_type: {
+      type: DataTypes.ENUM('self_paced', 'live_batch'),
+      defaultValue: 'self_paced',
+    },
     access_type: {
       type: DataTypes.ENUM(...ACCESS_TYPE_ENUM),
       defaultValue: 'Free',

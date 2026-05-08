@@ -67,6 +67,24 @@ const getCourses = asyncHandler(async (req, res, next) => {
             WHERE course_modules.course_id = Course.id
           )`),
           'total_lessons'
+        ],
+        [
+          sequelize.literal(`(
+            SELECT COUNT(*)
+            FROM user_courses
+            WHERE user_courses.course_id = Course.id
+          )`),
+          'total_learners'
+        ],
+        [
+          sequelize.literal(`(
+            SELECT COALESCE(TIMESTAMPDIFF(WEEK, start_date, end_date), 0)
+            FROM offline_batches
+            WHERE offline_batches.course_id = Course.id
+            ORDER BY createdAt DESC
+            LIMIT 1
+          )`),
+          'batch_duration_weeks'
         ]
       ]
     },

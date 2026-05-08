@@ -6,6 +6,7 @@ import {
 import { httpRequest } from "@/request";
 import endPoints from "@/request/endpoints";
 import DataTable from "@/components/ui/DataTable";
+import { formatDate } from "@/utils/commonFunctions";
 
 const EnrollmentHistory = ({ title = "Recent Enrollments" }) => {
   const [enrollments, setEnrollments] = useState([]);
@@ -97,7 +98,7 @@ const EnrollmentHistory = ({ title = "Recent Enrollments" }) => {
       accessorKey: "createdAt",
       cell: ({ row }) => (
         <p className="text-[10px] font-black text-gray-500 uppercase italic">
-          {new Date(row.original.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+          {formatDate(row.original.createdAt)}
         </p>
       )
     },

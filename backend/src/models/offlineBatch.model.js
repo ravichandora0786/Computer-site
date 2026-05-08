@@ -37,6 +37,9 @@ const OfflineBatchModel = sequelize.define(
     location: {
       type: DataTypes.STRING,
     },
+    meeting_link: {
+      type: DataTypes.STRING, // For Online Cohorts (Zoom, Meet, etc.)
+    },
     seat_limit: {
       type: DataTypes.INTEGER,
       defaultValue: 0,

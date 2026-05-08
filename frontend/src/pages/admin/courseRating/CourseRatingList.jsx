@@ -7,6 +7,7 @@ import PageTitle from "@/components/ui/PageTitle";
 import ActionIcon from "@/components/ui/ActionIcon";
 import DeleteConfirmationModal from "../../../components/ui/modal/deleteConfirmation";
 import { MdDelete, MdStar } from "react-icons/md";
+import { formatDate } from "@/utils/commonFunctions";
 
 const CourseRatingList = () => {
   const dispatch = useDispatch();
@@ -42,7 +43,11 @@ const CourseRatingList = () => {
       )
     },
     { header: "Comment", accessorKey: "comment", cell: ({ getValue }) => <p className="max-w-xs truncate text-gray-500 font-medium">{getValue() || "-"}</p> },
-    { header: "Date", accessorKey: "createdAt", cell: ({ getValue }) => new Date(getValue()).toLocaleDateString() },
+    { 
+      header: "Date", 
+      accessorKey: "createdAt", 
+      cell: ({ getValue }) => formatDate(getValue())
+    },
     {
       header: "Actions",
       id: "actions",

@@ -34,11 +34,11 @@ const DashboardLayout = ({ children }) => {
           <UserSidebar />
         </aside>
         
-        <div className="flex-1 flex flex-col min-h-[calc(100vh-128px)]">
+        <div className="flex-1 flex flex-col min-h-[calc(100vh-128px)] min-w-0">
           <motion.main
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex-1 p-4 lg:p-6 max-w-auto mx-auto w-full"
+            className="flex-1 p-4 lg:p-6 max-w-full mx-auto w-full"
           >
             {children}
           </motion.main>

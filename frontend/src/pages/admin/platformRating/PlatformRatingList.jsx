@@ -7,6 +7,7 @@ import PageTitle from "@/components/ui/PageTitle";
 import ActionIcon from "@/components/ui/ActionIcon";
 import DeleteConfirmationModal from "../../../components/ui/modal/deleteConfirmation";
 import { MdDelete, MdStar, MdPerson, MdPublic } from "react-icons/md";
+import { formatDate } from "@/utils/commonFunctions";
 
 const PlatformRatingList = () => {
   const dispatch = useDispatch();
@@ -54,7 +55,11 @@ const PlatformRatingList = () => {
       )
     },
     { header: "Review", accessorKey: "comment", cell: ({ getValue }) => <p className="max-w-md truncate text-gray-500 font-medium italic">{getValue() || "No comment"}</p> },
-    { header: "Date", accessorKey: "createdAt", cell: ({ getValue }) => new Date(getValue()).toLocaleDateString() },
+    { 
+      header: "Date", 
+      accessorKey: "createdAt", 
+      cell: ({ getValue }) => formatDate(getValue())
+    },
     {
       header: "Actions",
       id: "actions",

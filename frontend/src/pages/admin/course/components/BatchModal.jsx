@@ -8,7 +8,9 @@ import RenderFields from "@/components/ui/renderFields";
 import { BATCH_STATUS_OPTIONS, WEEKDAY_OPTIONS } from "@/constants/dropdown";
 import { createBatchAction, updateBatchAction } from "../courseContentSlice";
 
-const BatchModal = ({ isOpen, onClose, onSuccess, editingItem, courseId, courseStartDate, courseEndDate }) => {
+import { MdInfoOutline } from "react-icons/md";
+
+const BatchModal = ({ isOpen, onClose, onSuccess, editingItem, courseId, courseMode, courseStartDate, courseEndDate, courseStatus }) => {
   const dispatch = useDispatch();
 
   const formatDate = (dateStr) => {
@@ -38,30 +40,40 @@ const BatchModal = ({ isOpen, onClose, onSuccess, editingItem, courseId, courseS
     start_time: editingItem?.start_time || "",
     end_time: editingItem?.end_time || "",
     class_days: editingItem?.class_days ? editingItem.class_days.split(",").map(d => d.trim()) : [],
+    meeting_link: editingItem?.meeting_link || "",
     status: editingItem?.status || "draft"
   }), [editingItem, courseStartDate, courseEndDate]);
 
-  const fields = [
-    { name: "batch_name", label: "Batch Name", type: "text", placeholder: "e.g. Batch 1", fullWidth: true, required: true },
-    { name: "start_date", label: "Start Date", type: "date", required: true },
-    { name: "end_date", label: "End Date", type: "date" },
-    { name: "location", label: "Location", type: "text", placeholder: "" },
-    { name: "seat_limit", label: "Seat Limit", type: "number", placeholder: "" },
-    { name: "start_time", label: "Start Time", type: "time" },
-    { name: "end_time", label: "End Time", type: "time" },
-    {
-      name: "class_days",
-      label: "Class Days Schedule",
-      type: "multiselect",
-      options: WEEKDAY_OPTIONS,
-      placeholder: "Select Days",
-      fullWidth: true,
-      required: true,
-      allowSelectAll: true,
-      isClearable: true,
-    },
-    { name: "status", label: "Status", type: "select", options: BATCH_STATUS_OPTIONS, fullWidth: true, required: true },
-  ];
+  const fields = useMemo(() => {
+    const allFields = [
+      { name: "batch_name", label: "Batch Name", type: "text", placeholder: "e.g. Batch 1", fullWidth: true, required: true },
+      { name: "start_date", label: "Start Date", type: "date", required: true },
+      { name: "end_date", label: "End Date", type: "date" },
+      { name: "location", label: "Location", type: "text", placeholder: "Offline Center Address" },
+      { name: "seat_limit", label: "Seat Limit", type: "number", placeholder: "" },
+      { name: "start_time", label: "Start Time", type: "time" },
+      { name: "end_time", label: "End Time", type: "time" },
+      { name: "meeting_link", label: "Meeting Link", type: "text", placeholder: "Zoom/Google Meet Link", fullWidth: true },
+      {
+        name: "class_days",
+        label: "Class Days Schedule",
+        type: "multiselect",
+        options: WEEKDAY_OPTIONS,
+        placeholder: "Select Days",
+        fullWidth: true,
+        required: true,
+        allowSelectAll: true,
+        isClearable: true,
+      },
+      { name: "status", label: "Status", type: "select", options: BATCH_STATUS_OPTIONS, fullWidth: true, required: true },
+    ];
+
+    return allFields.filter(field => {
+      if (field.name === "location" && courseMode === "Online") return false;
+      if (field.name === "meeting_link" && courseMode === "Offline") return false;
+      return true;
+    });
+  }, [courseMode]);
 
   const handleSubmit = (values, { setSubmitting }) => {
     const action = editingItem?.id ? updateBatchAction : createBatchAction;
@@ -100,6 +112,17 @@ const BatchModal = ({ isOpen, onClose, onSuccess, editingItem, courseId, courseS
         >
           {({ setFieldValue, values, errors, touched, isSubmitting }) => (
             <Form className="space-y-4">
+              {courseStatus === "coming soon" && (
+                <div className="bg-amber-50 border border-amber-100 p-4 rounded-xl flex items-center gap-3 mb-4 animate-pulse">
+                  <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center text-amber-600">
+                    <MdInfoOutline size={24} />
+                  </div>
+                  <div>
+                    <p className="text-amber-800 text-[10px] font-black uppercase italic">Course is in 'Coming Soon' Mode</p>
+                    <p className="text-amber-600 text-[8px] font-bold uppercase tracking-tight">This batch will appear as "Planning" to students until course is Active.</p>
+                  </div>
+                </div>
+              )}
               <RenderFields
                 fields={fields}
                 setFieldValue={setFieldValue}

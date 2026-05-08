@@ -23,6 +23,7 @@ const UserDashboard = () => {
 
   useEffect(() => {
     dispatch(fetchCourses());
+    dispatch({ type: "userAuth/fetchDashboardStatsRequest" });
   }, [dispatch]);
 
   const enrolledCourses = stats?.enrolledCourses || [];

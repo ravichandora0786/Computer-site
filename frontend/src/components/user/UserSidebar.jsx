@@ -8,6 +8,7 @@ import {
 } from "react-icons/md";
 import { useSelector, useDispatch } from "react-redux";
 import { userLogout } from "../../pages/user/auth/slice";
+import { logoutApp } from "../../pages/admin/common/slice";
 import { selectUser } from "../../pages/admin/common/selector";
 import clsx from "clsx";
 
@@ -97,7 +98,7 @@ const UserSidebar = () => {
 
         {/* Logout Item */}
         <button
-          onClick={() => dispatch(userLogout())}
+          onClick={() => dispatch(logoutApp())}
           className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500 dark:hover:text-red-400 transition-all duration-200 group mt-1"
         >
           <MdLogout className="w-5 h-5 text-gray-400 group-hover:text-red-500 transition-colors" />

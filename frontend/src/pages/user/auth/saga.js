@@ -38,7 +38,17 @@ function* handleUserRegister(action) {
   }
 }
 
+function* handleFetchDashboardStats() {
+  try {
+    const response = yield call(httpRequest.get, endPoints.UserDashboardStats);
+    yield put({ type: "userAuth/setDashboardStats", payload: response.data });
+  } catch (error) {
+    console.error("Failed to fetch dashboard stats:", error);
+  }
+}
+
 export function* userAuthSaga() {
   yield takeLatest(userLoginRequest.type, handleUserLogin);
   yield takeLatest(userRegisterRequest.type, handleUserRegister);
+  yield takeLatest("userAuth/fetchDashboardStatsRequest", handleFetchDashboardStats);
 }
